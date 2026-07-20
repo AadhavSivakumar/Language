@@ -109,6 +109,13 @@ button { font-family: inherit; cursor: pointer; }
   position: absolute; top: 8px; right: 10px;
   color: var(--green); font-weight: 900; font-size: 16px;
 }
+/* Cross-topic practice tracks: slightly wider cards so the description reads. */
+.practice-grid {
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  margin-bottom: 26px;
+}
+.practice-grid .topic-card { padding-top: 16px; padding-bottom: 14px; }
+.practice-grid .topic-count { font-weight: 600; line-height: 1.35; margin-top: 2px; }
 
 /* Topic detail view */
 .topic-view { padding-bottom: 40px; }

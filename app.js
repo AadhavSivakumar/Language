@@ -22,6 +22,19 @@
   const VOCAB = window.VOCAB;
   const SENTENCES = window.SENTENCES;
   const ALPHABET = window.ALPHABET;
+  const CONJUGATION = window.CONJUGATION || [];
+
+  /* Cross-topic practice tracks — shown on the home screen as "things to
+   * practise" (as opposed to browsing a single topic). Each behaves like a
+   * pseudo-topic in the session runner: it has a colour, an id and a pool. */
+  const PRACTICE = [
+    { id: "prac-vocab", title: "Vocabulary", icon: "🧠", color: "#7c5cff",
+      kind: "practice", pool: "vocab", desc: "Mixed word practice from every topic" },
+    { id: "prac-sentence", title: "Sentences", icon: "📝", color: "#1cb0f6",
+      kind: "practice", pool: "sentence", desc: "Build and translate full sentences" },
+    { id: "prac-conjugation", title: "Conjugation", icon: "🔄", color: "#e6584b",
+      kind: "practice", pool: "conjugation", desc: "Verb tenses — past, present & future" },
+  ];
 
   const app = document.getElementById("app");
   const topbar = document.getElementById("topbar");
@@ -104,7 +117,37 @@
     if (topicId === "sentences") return SENTENCES;
     return SENTENCES.filter(s => s.topic === topicId);
   }
+
+  // Pools for the cross-topic practice tracks (kind: "practice").
+  const conjugationForms = () => CONJUGATION.reduce((a, v) => a.concat(v.forms), []);
+  function vocabPoolFor(topic) {
+    if (topic.kind === "practice") {
+      if (topic.pool === "conjugation") return conjugationForms();
+      return VOCAB;                        // "vocab" track = every word
+    }
+    return topicVocab(topic.id);
+  }
+  function sentencePoolFor(topic) {
+    if (topic.kind === "practice") return SENTENCES;
+    return topicSentences(topic.id);
+  }
+  function countLabel(topic) {
+    if (topic.kind === "practice") {
+      if (topic.pool === "sentence") return SENTENCES.length + " sentences";
+      if (topic.pool === "conjugation")
+        return CONJUGATION.length + " verbs · " + conjugationForms().length + " forms";
+      return VOCAB.length + " words";
+    }
+    return topic.kind === "sentence"
+      ? topicSentences(topic.id).length + " sentences"
+      : topicVocab(topic.id).length + " words";
+  }
   function modesFor(topic) {
+    if (topic.kind === "practice") {
+      if (topic.pool === "sentence") return ["build", "translate", "flash"];
+      if (topic.pool === "conjugation") return ["conjugate", "type", "flash"];
+      return ["choice", "match", "type", "listen", "flash"];
+    }
     if (topic.kind === "sentence") {
       return ["build", "translate", "flash"];
     }
@@ -120,6 +163,7 @@
     listen:    { icon: "🎧", title: "Listening",    desc: "Hear it, choose the meaning" },
     build:     { icon: "🧩", title: "Build a sentence", desc: "Tap word tiles in order" },
     translate: { icon: "🔤", title: "Translate",    desc: "Read Tamil, choose the English" },
+    conjugate: { icon: "🔄", title: "Conjugation quiz", desc: "Choose the correct verb form" },
   };
 
   /* ============================== HOME VIEW ============================== */
@@ -137,22 +181,28 @@
     hero.appendChild(hg);
     wrap.appendChild(hero);
 
-    wrap.appendChild(el("h2", "section-title", "Choose a topic"));
-    const grid = el("div", "topic-grid");
-    TOPICS.forEach(topic => {
-      const count = topic.kind === "sentence"
-        ? topicSentences(topic.id).length + " sentences"
-        : topicVocab(topic.id).length + " words";
+    const makeCard = (topic, subText) => {
       const card = el("button", "topic-card");
       card.type = "button";
       card.style.setProperty("--tc", topic.color);
       card.appendChild(el("span", "topic-icon", topic.icon));
       card.appendChild(el("span", "topic-name", topic.title));
-      card.appendChild(el("span", "topic-count", count));
+      card.appendChild(el("span", "topic-count", subText));
       if (state.practiced[topic.id]) card.appendChild(el("span", "topic-badge", "✓"));
       card.addEventListener("click", () => renderTopic(topic));
-      grid.appendChild(card);
-    });
+      return card;
+    };
+
+    // Cross-topic practice tracks first — "what do you want to practise?"
+    wrap.appendChild(el("h2", "section-title", "Choose what to practise"));
+    const pracGrid = el("div", "topic-grid practice-grid");
+    PRACTICE.forEach(p => pracGrid.appendChild(makeCard(p, p.desc)));
+    wrap.appendChild(pracGrid);
+
+    // Then browse individual topics.
+    wrap.appendChild(el("h2", "section-title", "Or explore a topic"));
+    const grid = el("div", "topic-grid");
+    TOPICS.forEach(topic => grid.appendChild(makeCard(topic, countLabel(topic))));
     wrap.appendChild(grid);
 
     const footer = el("div", "home-footer");
@@ -182,10 +232,7 @@
     head.appendChild(el("span", "topic-head-icon", topic.icon));
     const ht = el("div");
     ht.appendChild(el("h1", "topic-head-title", topic.title));
-    const n = topic.kind === "sentence"
-      ? topicSentences(topic.id).length + " sentences"
-      : topicVocab(topic.id).length + " words to learn";
-    ht.appendChild(el("p", "topic-head-sub", n));
+    ht.appendChild(el("p", "topic-head-sub", countLabel(topic)));
     head.appendChild(ht);
     wrap.appendChild(head);
 
@@ -310,6 +357,31 @@
     });
   }
 
+  // Conjugation quiz: prompt an English clause; distractors are OTHER forms of
+  // the SAME verb, so you must pick the correct person + tense.
+  function genConjugate(tables) {
+    const usable = tables.filter(t => t.forms && t.forms.length >= 4);
+    if (!usable.length) return [];
+    const order = shuffle(usable);
+    const items = [];
+    for (let i = 0; i < MAX_Q; i++) {
+      const t = order[i % order.length];
+      const form = t.forms[Math.floor(Math.random() * t.forms.length)];
+      const others = shuffle(t.forms.filter(f => f.ta !== form.ta)).slice(0, 3);
+      const subFor = {}; [form].concat(others).forEach(f => subFor[f.ta] = f.tr);
+      items.push({ type: "select", prompt: form.en, promptSub: "(to " + t.en + ")",
+                   ask: "Say this in Tamil:",
+                   choices: shuffle([form.ta].concat(others.map(f => f.ta))),
+                   answer: form.ta, subFor });
+    }
+    return items;
+  }
+  function genConjugateType(forms) {
+    const items = sample(forms, Math.min(MAX_Q, forms.length));
+    return items.map(f => ({ type: "type", prompt: f.en, promptSub: "",
+      ask: "Type it in Tamil (transliteration is fine)", accept: [f.ta, f.tr, fold(f.tr)] }));
+  }
+
   // strip diacritics so typed plain-ASCII transliteration is accepted
   function fold(s) {
     return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
@@ -322,13 +394,16 @@
 
     if (mode === "flash") return startFlashcards(topic);
 
+    const vpool = vocabPoolFor(topic);
+    const spool = sentencePoolFor(topic);
     let queue = [];
-    if (mode === "choice")        queue = genChoice(topicVocab(topic.id));
-    else if (mode === "match")    queue = genMatch(topicVocab(topic.id));
-    else if (mode === "type")     queue = genType(topicVocab(topic.id));
-    else if (mode === "listen")   queue = genListen(topicVocab(topic.id));
-    else if (mode === "build")    queue = genBuild(topicSentences(topic.id));
-    else if (mode === "translate")queue = genTranslate(topicSentences(topic.id));
+    if (mode === "choice")         queue = genChoice(vpool);
+    else if (mode === "match")     queue = genMatch(vpool);
+    else if (mode === "type")      queue = topic.pool === "conjugation" ? genConjugateType(vpool) : genType(vpool);
+    else if (mode === "listen")    queue = genListen(vpool);
+    else if (mode === "build")     queue = genBuild(spool);
+    else if (mode === "translate") queue = genTranslate(spool);
+    else if (mode === "conjugate") queue = genConjugate(CONJUGATION);
 
     if (!queue.length) { alert("Not enough content for this mode yet."); return; }
 
@@ -661,8 +736,14 @@
 
   /* ----------------------------- FLASHCARDS ------------------------------ */
   function startFlashcards(topic) {
-    const isSentence = topic.kind === "sentence";
-    const items = isSentence ? topicSentences(topic.id) : topicVocab(topic.id);
+    let items;
+    if (topic.kind === "practice") {
+      items = topic.pool === "sentence" ? SENTENCES
+            : topic.pool === "conjugation" ? conjugationForms()
+            : VOCAB;
+    } else {
+      items = topic.kind === "sentence" ? topicSentences(topic.id) : topicVocab(topic.id);
+    }
     const cards = shuffle(items);
     let i = 0, flipped = false;
 
