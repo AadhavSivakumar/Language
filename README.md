@@ -6,22 +6,24 @@ locally, so it works offline once loaded and is perfect for **GitHub Pages**.
 
 ## Features
 
-- **Six units, from script to sentences** — the Tamil alphabet (உயிர்/மெய்),
-  greetings, numbers, pronouns & family, everyday nouns and verbs, and finally
-  grammar: word order, cases and the three tenses.
-- **Five exercise types**
-  - **Multiple choice** — pick the meaning / sound
-  - **Word matching** — tap the Tamil word and its English pair
-  - **Sentence building** — tap word-tiles to translate (English → Tamil)
-  - **Type the answer** — free typing with lenient checking (script *or*
-    transliteration accepted)
-  - **Teaching cards** — learn before you're tested
-- **Script + transliteration + English** on everything, so absolute beginners
-  always have three anchors.
-- **Tamil audio** via the browser's speech synthesis (tap 🔊). Availability of a
-  Tamil voice depends on your OS/browser.
-- **Progress, XP, day streak and hearts**, all saved in `localStorage`.
-  Lessons unlock as you complete the previous one. Hearts refill daily.
+- **Pick a topic, then pick how you practise.** No fixed path — you choose.
+  **17 topics:** the alphabet, greetings, numbers, family, pronouns, food,
+  animals, colours, the body, home & objects, nature, time & days, verbs,
+  adjectives, places, question words, and full sentences.
+- **Seven practice modes**, generated fresh from the content each time:
+  - **Flashcards** — flip to reveal, learn at your own pace (not scored)
+  - **Multiple choice** — pick the meaning (Tamil→English or English→Tamil)
+  - **Matching** — tap the Tamil word and its English pair
+  - **Type it** — free typing with lenient checking (script *or* transliteration)
+  - **Listening** — hear the Tamil, choose the meaning
+  - **Build a sentence** — tap word-tiles in order
+  - **Translate** — read a Tamil sentence, choose the English
+- **~200 words and ~35 sentences**, each with **Tamil script + transliteration
+  + English**, so beginners always have three anchors.
+- **Tamil audio** via the browser's speech synthesis (tap 🔊). If no Tamil voice
+  is installed, the listening mode falls back to showing the transliteration.
+- **XP and a day streak**, saved in `localStorage`. No hearts, no lock-outs —
+  practise as much as you like.
 - **Light & dark mode**, responsive for phone and desktop.
 
 ## Run locally
@@ -47,11 +49,15 @@ The `.nojekyll` file tells Pages to serve the files verbatim.
 
 ## Add or edit content
 
-All course material lives in [`data.js`](./data.js) as plain data — no code
-needed to extend it. Each unit has lessons, each lesson has a list of
-exercises. The comment block at the top of the file documents every exercise
-type and its fields. Add a row, a lesson, or a whole new unit and the app
-renders it automatically.
+All course material lives in [`data.js`](./data.js) as plain data — and because
+the app *generates* the exercises, you never touch the exercise code:
+
+- Add a word by appending a `["தமிழ்", "tamiḻ", "english"]` row to the right
+  topic in `VOCAB`.
+- Add a sentence to `SENTENCES` with its word tokens (used by the build mode).
+- Add a whole new topic to `TOPICS` and give its words a matching `topic` id.
+
+Every practice mode picks up the new content automatically.
 
 ## Project structure
 
