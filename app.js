@@ -23,6 +23,7 @@
   const SENTENCES = window.SENTENCES;
   const ALPHABET = window.ALPHABET;
   const CONJUGATION = window.CONJUGATION || [];
+  const KURAL = window.KURAL || [];
 
   /* Cross-topic practice tracks — shown on the home screen as "things to
    * practise" (as opposed to browsing a single topic). Each behaves like a
@@ -34,6 +35,12 @@
       kind: "practice", pool: "sentence", desc: "Build and translate full sentences" },
     { id: "prac-conjugation", title: "Conjugation", icon: "🔄", color: "#e6584b",
       kind: "practice", pool: "conjugation", desc: "Verb tenses — past, present & future" },
+    { id: "prac-listening", title: "Listening", icon: "🎧", color: "#2bb673",
+      kind: "practice", pool: "listening", desc: "Ear training — words and sentences" },
+    { id: "prac-kural", title: "Thirukkural", icon: "📜", color: "#c9962b",
+      kind: "practice", pool: "kural", desc: "Classical couplets of Tiruvaḷḷuvar" },
+    { id: "prac-mixed", title: "Mixed review", icon: "🎲", color: "#ff8f1f",
+      kind: "practice", pool: "mixed", desc: "A bit of everything you've seen" },
   ];
 
   const app = document.getElementById("app");
@@ -111,7 +118,28 @@
   /* --------------------------- Content helpers --------------------------- */
   function topicVocab(topicId) {
     if (topicId === "alphabet") return ALPHABET.vowels.concat(ALPHABET.consonants);
-    return VOCAB.filter(v => v.topic === topicId);
+    // A word belongs to a topic if it was authored there, or if it's a
+    // frequency-list word filed under that topic via `also`.
+    return VOCAB.filter(v => v.topic === topicId || v.also === topicId);
+  }
+
+  /* ---------------------------- Difficulty ------------------------------
+   * Both the hand-curated topic lists and the frequency list are ordered
+   * easiest/commonest first, so a topic splits into three tiers by position:
+   * the first third is Easy, the last third Hard. Tiers only appear when a
+   * topic has enough words for each tier to be a usable session. */
+  const LEVELS = [
+    { id: "all", label: "All" }, { id: "easy", label: "Easy" },
+    { id: "medium", label: "Medium" }, { id: "hard", label: "Hard" },
+  ];
+  const MIN_FOR_TIERS = 18;          // ≥6 items per tier
+  const hasTiers = pool => pool.length >= MIN_FOR_TIERS;
+  function applyLevel(pool, level) {
+    if (!level || level === "all" || !hasTiers(pool)) return pool;
+    const a = Math.floor(pool.length / 3), b = Math.floor((pool.length * 2) / 3);
+    return level === "easy" ? pool.slice(0, a)
+         : level === "medium" ? pool.slice(a, b)
+         : pool.slice(b);
   }
   function topicSentences(topicId) {
     if (topicId === "sentences") return SENTENCES;
@@ -123,6 +151,10 @@
   function vocabPoolFor(topic) {
     if (topic.kind === "practice") {
       if (topic.pool === "conjugation") return conjugationForms();
+      if (topic.pool === "kural") return KURAL;
+      // "mixed" and "listening" draw on everything that has ta/tr/en.
+      if (topic.pool === "mixed" || topic.pool === "listening")
+        return VOCAB.concat(SENTENCES, conjugationForms());
       return VOCAB;                        // "vocab" track = every word
     }
     return topicVocab(topic.id);
@@ -136,6 +168,9 @@
       if (topic.pool === "sentence") return SENTENCES.length + " sentences";
       if (topic.pool === "conjugation")
         return CONJUGATION.length + " verbs · " + conjugationForms().length + " forms";
+      if (topic.pool === "kural") return KURAL.length + " couplets";
+      if (topic.pool === "mixed" || topic.pool === "listening")
+        return (VOCAB.length + SENTENCES.length + conjugationForms().length) + " items";
       return VOCAB.length + " words";
     }
     return topic.kind === "sentence"
@@ -144,12 +179,15 @@
   }
   function modesFor(topic) {
     if (topic.kind === "practice") {
-      if (topic.pool === "sentence") return ["build", "translate", "flash"];
+      if (topic.pool === "sentence")
+        return ["translate", "en2ta", "smatch", "build", "stype", "slisten", "flash"];
       if (topic.pool === "conjugation") return ["conjugate", "type", "flash"];
+      if (topic.pool === "kural") return ["kread", "translate", "kline", "smatch", "flash"];
+      if (topic.pool === "listening") return ["listen", "slisten", "flash"];
       return ["choice", "match", "type", "listen", "flash"];
     }
     if (topic.kind === "sentence") {
-      return ["build", "translate", "flash"];
+      return ["translate", "en2ta", "smatch", "build", "stype", "slisten", "flash"];
     }
     const m = ["flash", "choice", "match", "type", "listen"];
     if (topicSentences(topic.id).length >= 2) m.push("build");
@@ -162,8 +200,14 @@
     type:      { icon: "⌨️", title: "Type it",      desc: "Type the answer yourself" },
     listen:    { icon: "🎧", title: "Listening",    desc: "Hear it, choose the meaning" },
     build:     { icon: "🧩", title: "Build a sentence", desc: "Tap word tiles in order" },
-    translate: { icon: "🔤", title: "Translate",    desc: "Read Tamil, choose the English" },
+    translate: { icon: "🔤", title: "Tamil → English", desc: "Read Tamil, choose the meaning" },
+    en2ta:     { icon: "🔡", title: "English → Tamil", desc: "Read English, choose the Tamil" },
+    smatch:    { icon: "🔗", title: "Match sentences", desc: "Pair each Tamil with its English" },
     conjugate: { icon: "🔄", title: "Conjugation quiz", desc: "Choose the correct verb form" },
+    stype:     { icon: "⌨️", title: "Type the sentence", desc: "Write the whole sentence in Tamil" },
+    slisten:   { icon: "🎧", title: "Sentence listening", desc: "Hear a sentence, choose the meaning" },
+    kread:     { icon: "📖", title: "Read the kural", desc: "Browse the couplets with meanings" },
+    kline:     { icon: "🪶", title: "Complete the couplet", desc: "Given line one, pick line two" },
   };
 
   /* ============================== HOME VIEW ============================== */
@@ -236,6 +280,36 @@
     head.appendChild(ht);
     wrap.appendChild(head);
 
+    // Difficulty picker — only where the topic has enough words to split.
+    let level = "all";
+    const tierPool = vocabPoolFor(topic);
+    if (hasTiers(tierPool)) {
+      wrap.appendChild(el("h2", "section-title", "Difficulty"));
+      const row = el("div", "level-row");
+      const note = el("p", "level-note", "");
+      const setNote = () => {
+        const n = applyLevel(tierPool, level).length;
+        note.textContent = level === "all"
+          ? "All " + n + " — commonest words first."
+          : n + " words · " + (level === "easy" ? "the commonest"
+            : level === "medium" ? "the middle third" : "the least common");
+      };
+      LEVELS.forEach(lv => {
+        const b = el("button", "level-chip" + (lv.id === level ? " on" : ""), lv.label);
+        b.type = "button";
+        b.addEventListener("click", () => {
+          level = lv.id;
+          row.querySelectorAll(".level-chip").forEach(x => x.classList.remove("on"));
+          b.classList.add("on");
+          setNote();
+        });
+        row.appendChild(b);
+      });
+      wrap.appendChild(row);
+      setNote();
+      wrap.appendChild(note);
+    }
+
     wrap.appendChild(el("h2", "section-title", "How do you want to practise?"));
     const list = el("div", "mode-list");
     modesFor(topic).forEach(mode => {
@@ -248,7 +322,7 @@
       mt.appendChild(el("span", "mode-desc", meta.desc));
       b.appendChild(mt);
       b.appendChild(el("span", "mode-go", "▶"));
-      b.addEventListener("click", () => startMode(topic, mode));
+      b.addEventListener("click", () => startMode(topic, mode, level));
       list.appendChild(b);
     });
     wrap.appendChild(list);
@@ -290,11 +364,12 @@
     });
   }
 
-  function genMatch(pool) {
+  function genMatch(pool, groupSize) {
+    const n = groupSize || 5;
     const items = shuffle(pool);
     const boards = [];
-    for (let i = 0; i < items.length && boards.length < 3; i += 5) {
-      const group = items.slice(i, i + 5);
+    for (let i = 0; i < items.length && boards.length < 3; i += n) {
+      const group = items.slice(i, i + n);
       if (group.length < 3) break;
       boards.push({ type: "match", title: "Match Tamil to English",
         pairs: group.map(x => ({ ta: x.ta, tr: x.tr, en: x.en })) });
@@ -357,6 +432,44 @@
     });
   }
 
+  // English → Tamil: read the English sentence, choose the correct Tamil one.
+  function genEn2Ta(sentences) {
+    const items = sample(sentences, Math.min(MAX_Q, sentences.length));
+    return items.map(s => {
+      const others = shuffle(sentences.filter(x => x.ta !== s.ta)).slice(0, 3);
+      const all = [s].concat(others);
+      const subFor = {}; all.forEach(x => subFor[x.ta] = x.tr);
+      return { type: "select", prompt: s.en, promptSub: "",
+               ask: "Choose the Tamil sentence:", choices: all.map(x => x.ta),
+               answer: s.ta, subFor };
+    });
+  }
+
+  // Type the whole sentence in Tamil (script or transliteration both accepted).
+  function genSentenceType(sentences) {
+    const items = sample(sentences, Math.min(MAX_Q, sentences.length));
+    return items.map(s => ({
+      type: "type", prompt: s.en, promptSub: "",
+      ask: "Type this sentence in Tamil (transliteration is fine)",
+      accept: [s.ta, s.tr, fold(s.tr)],
+    }));
+  }
+
+  // Complete the couplet: show line one, choose the correct second line.
+  function genKuralLine(kurals) {
+    const usable = kurals.filter(k => k.l1 && k.l2);
+    if (usable.length < 4) return [];
+    const items = sample(usable, Math.min(MAX_Q, usable.length));
+    return items.map(k => {
+      const others = shuffle(usable.filter(x => x.l2 !== k.l2)).slice(0, 3);
+      const all = [k].concat(others);
+      const subFor = {}; all.forEach(x => subFor[x.l2] = x.tr2);
+      return { type: "select", prompt: k.l1, promptSub: k.tr1,
+               ask: "Which line completes this kural?",
+               choices: all.map(x => x.l2), answer: k.l2, subFor };
+    });
+  }
+
   // Conjugation quiz: prompt an English clause; distractors are OTHER forms of
   // the SAME verb, so you must pick the correct person + tense.
   function genConjugate(tables) {
@@ -389,25 +502,31 @@
   }
 
   /* ============================ SESSION RUNNER ========================== */
-  function startMode(topic, mode) {
+  function startMode(topic, mode, level) {
     state.practiced[topic.id] = true; save();
 
-    if (mode === "flash") return startFlashcards(topic);
+    if (mode === "flash") return startFlashcards(topic, level);
+    if (mode === "kread") return renderKuralReader(topic);
 
-    const vpool = vocabPoolFor(topic);
-    const spool = sentencePoolFor(topic);
+    const vpool = applyLevel(vocabPoolFor(topic), level);
+    const spool = applyLevel(sentencePoolFor(topic), level);
     let queue = [];
     if (mode === "choice")         queue = genChoice(vpool);
     else if (mode === "match")     queue = genMatch(vpool);
     else if (mode === "type")      queue = topic.pool === "conjugation" ? genConjugateType(vpool) : genType(vpool);
     else if (mode === "listen")    queue = genListen(vpool);
     else if (mode === "build")     queue = genBuild(spool);
-    else if (mode === "translate") queue = genTranslate(spool);
+    else if (mode === "translate") queue = genTranslate(topic.pool === "kural" ? vpool : spool);
+    else if (mode === "en2ta")     queue = genEn2Ta(spool);
+    else if (mode === "smatch")    queue = genMatch(topic.pool === "kural" ? vpool : spool, topic.pool === "kural" ? 3 : 4);
+    else if (mode === "stype")     queue = genSentenceType(spool);
+    else if (mode === "slisten")   queue = genListen(topic.pool === "listening" ? vpool : spool);
+    else if (mode === "kline")     queue = genKuralLine(KURAL);
     else if (mode === "conjugate") queue = genConjugate(CONJUGATION);
 
     if (!queue.length) { alert("Not enough content for this mode yet."); return; }
 
-    const session = { topic, mode, queue, idx: 0, total: queue.length, correct: 0 };
+    const session = { topic, mode, level, queue, idx: 0, total: queue.length, correct: 0 };
     renderExercise(session);
   }
 
@@ -734,17 +853,71 @@
     });
   }
 
+  /* --------------------------- KURAL READER ------------------------------
+   * Not a scored exercise — a quiet reading view. Each couplet is shown on
+   * its two metrical lines with transliteration, meaning and a speak button. */
+  function renderKuralReader(topic) {
+    renderTopbar();
+    app.innerHTML = "";
+    const wrap = el("div", "lesson kural-reader");
+    wrap.style.setProperty("--tc", topic.color);
+
+    const head = el("div", "lesson-head");
+    const quit = el("button", "quit", "✕");
+    quit.setAttribute("aria-label", "Back");
+    quit.addEventListener("click", () => renderTopic(topic));
+    head.appendChild(quit);
+    head.appendChild(el("div", "kural-head-title", "திருக்குறள்"));
+    wrap.appendChild(head);
+
+    const body = el("div", "lesson-body");
+    body.appendChild(el("p", "hint",
+      "Couplets from the Tirukkuṟaḷ of Tiruvaḷḷuvar, with the standard numbering."));
+
+    KURAL.forEach(k => {
+      const card = el("div", "kural-card");
+      const top = el("div", "kural-top");
+      top.appendChild(el("span", "kural-num", "குறள் " + k.n));
+      top.appendChild(el("span", "kural-chapter", k.chapter + " · " + k.chapterEn));
+      card.appendChild(top);
+
+      const lines = el("div", "kural-lines");
+      lines.appendChild(el("div", "kural-line", k.l1));
+      lines.appendChild(el("div", "kural-line", k.l2));
+      card.appendChild(lines);
+      card.appendChild(speaker(k.ta));
+
+      card.appendChild(el("div", "kural-tr", k.tr1));
+      card.appendChild(el("div", "kural-tr", k.tr2));
+      card.appendChild(el("div", "kural-en", k.en));
+      body.appendChild(card);
+    });
+
+    const foot = el("div", "check-foot");
+    const done = el("button", "btn btn-primary", "Done reading");
+    done.addEventListener("click", () => { grantXp(topic, 0, 0); renderTopic(topic); });
+    foot.appendChild(done);
+    body.appendChild(foot);
+
+    wrap.appendChild(body);
+    app.appendChild(wrap);
+    window.scrollTo(0, 0);
+  }
+
   /* ----------------------------- FLASHCARDS ------------------------------ */
-  function startFlashcards(topic) {
+  function startFlashcards(topic, level) {
     let items;
     if (topic.kind === "practice") {
       items = topic.pool === "sentence" ? SENTENCES
             : topic.pool === "conjugation" ? conjugationForms()
+            : topic.pool === "kural" ? KURAL
+            : (topic.pool === "mixed" || topic.pool === "listening")
+              ? VOCAB.concat(SENTENCES, conjugationForms())
             : VOCAB;
     } else {
       items = topic.kind === "sentence" ? topicSentences(topic.id) : topicVocab(topic.id);
     }
-    const cards = shuffle(items);
+    const cards = shuffle(applyLevel(items, level));
     let i = 0, flipped = false;
 
     function render() {
@@ -838,7 +1011,7 @@
 
     const foot = el("div", "check-foot");
     const again = el("button", "btn btn-primary", "Practise again");
-    again.addEventListener("click", () => startMode(session.topic, session.mode));
+    again.addEventListener("click", () => startMode(session.topic, session.mode, session.level));
     const more = el("button", "btn btn-ghost", "Choose another mode");
     more.addEventListener("click", () => renderTopic(session.topic));
     foot.appendChild(again); foot.appendChild(more);

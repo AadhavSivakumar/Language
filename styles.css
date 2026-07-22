@@ -394,3 +394,39 @@ button { font-family: inherit; cursor: pointer; }
   .choice-text { font-size: 19px; }
   .topic-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
 }
+
+/* ----------------------------- Kural reader ----------------------------- */
+.kural-head-title { font-weight: 700; font-size: 18px; margin-left: 4px; }
+.kural-card {
+  background: var(--card, #fff);
+  border: 1px solid rgba(0, 0, 0, .08);
+  border-left: 4px solid var(--tc, #c9962b);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.kural-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin-bottom: 10px; }
+.kural-num {
+  font-weight: 700; font-size: 12px; letter-spacing: .04em;
+  color: var(--tc, #c9962b); text-transform: uppercase;
+}
+.kural-chapter { font-size: 12px; opacity: .65; }
+.kural-lines { margin-bottom: 8px; }
+.kural-line { font-size: 20px; line-height: 1.65; font-weight: 600; }
+.kural-tr { font-size: 13px; opacity: .7; font-style: italic; line-height: 1.5; }
+.kural-en { margin-top: 10px; font-size: 15px; line-height: 1.55; }
+.kural-reader .lesson-body { max-width: 640px; }
+
+/* --------------------------- Difficulty chips --------------------------- */
+.level-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+.level-chip {
+  font: inherit; font-weight: 600; font-size: 14px;
+  padding: 7px 16px; border-radius: 999px; cursor: pointer;
+  background: transparent; color: inherit;
+  border: 1.5px solid rgba(128, 128, 128, .45);
+}
+.level-chip:hover { border-color: var(--tc, #7c5cff); }
+.level-chip.on {
+  background: var(--tc, #7c5cff); border-color: var(--tc, #7c5cff); color: #fff;
+}
+.level-note { font-size: 13px; opacity: .65; margin: 0 0 18px; }
