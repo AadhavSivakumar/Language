@@ -29,17 +29,17 @@
    * practise" (as opposed to browsing a single topic). Each behaves like a
    * pseudo-topic in the session runner: it has a colour, an id and a pool. */
   const PRACTICE = [
-    { id: "prac-vocab", title: "Vocabulary", icon: "🧠", color: "#7c5cff",
+    { id: "prac-vocab", title: "Vocabulary", icon: "சொல்", color: "#4a5b8c",
       kind: "practice", pool: "vocab", desc: "Mixed word practice from every topic" },
-    { id: "prac-sentence", title: "Sentences", icon: "📝", color: "#1cb0f6",
+    { id: "prac-sentence", title: "Sentences", icon: "வாக்கியம்", color: "#8c6d3f",
       kind: "practice", pool: "sentence", desc: "Build and translate full sentences" },
-    { id: "prac-conjugation", title: "Conjugation", icon: "🔄", color: "#e6584b",
+    { id: "prac-conjugation", title: "Conjugation", icon: "வினை", color: "#a85a44",
       kind: "practice", pool: "conjugation", desc: "Verb tenses — past, present & future" },
-    { id: "prac-listening", title: "Listening", icon: "🎧", color: "#2bb673",
+    { id: "prac-listening", title: "Listening", icon: "கேட்டல்", color: "#6b7f4e",
       kind: "practice", pool: "listening", desc: "Ear training — words and sentences" },
-    { id: "prac-kural", title: "Thirukkural", icon: "📜", color: "#c9962b",
+    { id: "prac-kural", title: "Thirukkural", icon: "திருக்குறள்", color: "#8c6d3f",
       kind: "practice", pool: "kural", desc: "Classical couplets of Tiruvaḷḷuvar" },
-    { id: "prac-mixed", title: "Mixed review", icon: "🎲", color: "#ff8f1f",
+    { id: "prac-mixed", title: "Mixed review", icon: "கலவை", color: "#7a5470",
       kind: "practice", pool: "mixed", desc: "A bit of everything you've seen" },
   ];
 
@@ -100,8 +100,12 @@
     } catch (e) {}
   }
   function speaker(text) {
-    const b = el("button", "spk", "🔊");
+    const b = el("button", "spk");
     b.type = "button";
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+      '<path d="M4 9.5h3.2L12 5v14l-4.8-4.5H4z" fill="currentColor"/>' +
+      '<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" ' +
+      'stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
     b.setAttribute("aria-label", "Play pronunciation");
     b.addEventListener("click", (e) => { e.stopPropagation(); speak(text); });
     return b;
@@ -194,20 +198,20 @@
     return m;
   }
   const MODE_META = {
-    flash:     { icon: "🃏", title: "Flashcards",   desc: "Flip through and learn — no pressure" },
-    choice:    { icon: "☑️", title: "Multiple choice", desc: "Pick the right meaning" },
-    match:     { icon: "🔗", title: "Matching",     desc: "Tap the matching pairs" },
-    type:      { icon: "⌨️", title: "Type it",      desc: "Type the answer yourself" },
-    listen:    { icon: "🎧", title: "Listening",    desc: "Hear it, choose the meaning" },
-    build:     { icon: "🧩", title: "Build a sentence", desc: "Tap word tiles in order" },
-    translate: { icon: "🔤", title: "Tamil → English", desc: "Read Tamil, choose the meaning" },
-    en2ta:     { icon: "🔡", title: "English → Tamil", desc: "Read English, choose the Tamil" },
-    smatch:    { icon: "🔗", title: "Match sentences", desc: "Pair each Tamil with its English" },
-    conjugate: { icon: "🔄", title: "Conjugation quiz", desc: "Choose the correct verb form" },
-    stype:     { icon: "⌨️", title: "Type the sentence", desc: "Write the whole sentence in Tamil" },
-    slisten:   { icon: "🎧", title: "Sentence listening", desc: "Hear a sentence, choose the meaning" },
-    kread:     { icon: "📖", title: "Read the kural", desc: "Browse the couplets with meanings" },
-    kline:     { icon: "🪶", title: "Complete the couplet", desc: "Given line one, pick line two" },
+    flash:     { title: "Flashcards",   desc: "Flip through and learn — no pressure" },
+    choice:    { title: "Multiple choice", desc: "Pick the right meaning" },
+    match:     { title: "Matching",     desc: "Tap the matching pairs" },
+    type:      { title: "Type it",      desc: "Type the answer yourself" },
+    listen:    { title: "Listening",    desc: "Hear it, choose the meaning" },
+    build:     { title: "Build a sentence", desc: "Tap word tiles in order" },
+    translate: { title: "Tamil → English", desc: "Read Tamil, choose the meaning" },
+    en2ta:     { title: "English → Tamil", desc: "Read English, choose the Tamil" },
+    smatch:    { title: "Match sentences", desc: "Pair each Tamil with its English" },
+    conjugate: { title: "Conjugation quiz", desc: "Choose the correct verb form" },
+    stype:     { title: "Type the sentence", desc: "Write the whole sentence in Tamil" },
+    slisten:   { title: "Sentence listening", desc: "Hear a sentence, choose the meaning" },
+    kread:     { title: "Read the kural", desc: "Browse the couplets with meanings" },
+    kline:     { title: "Complete the couplet", desc: "Given line one, pick line two" },
   };
 
   /* ============================== HOME VIEW ============================== */
@@ -218,10 +222,10 @@
     const wrap = el("div", "home");
 
     const hero = el("div", "hero");
-    hero.appendChild(el("div", "hero-logo", "🦜"));
+    hero.appendChild(el("div", "hero-logo", "கிளி"));
     const hg = el("div");
-    hg.appendChild(el("h1", "hero-title", "கிளி · Learn Tamil"));
-    hg.appendChild(el("p", "hero-sub", "Pick a topic, then choose how you want to practise."));
+    hg.appendChild(el("h1", "hero-title", "Learn Tamil"));
+    hg.appendChild(el("p", "hero-sub", "The alphabet, 1,500 words, sentences, verb conjugation and the Tirukkuṟaḷ — practise however suits you."));
     hero.appendChild(hg);
     wrap.appendChild(hero);
 
@@ -232,7 +236,7 @@
       card.appendChild(el("span", "topic-icon", topic.icon));
       card.appendChild(el("span", "topic-name", topic.title));
       card.appendChild(el("span", "topic-count", subText));
-      if (state.practiced[topic.id]) card.appendChild(el("span", "topic-badge", "✓"));
+      if (state.practiced[topic.id]) card.appendChild(el("span", "topic-badge", "●"));
       card.addEventListener("click", () => renderTopic(topic));
       return card;
     };
@@ -316,12 +320,11 @@
       const meta = MODE_META[mode];
       const b = el("button", "mode-card");
       b.type = "button";
-      b.appendChild(el("span", "mode-icon", meta.icon));
       const mt = el("div", "mode-text");
       mt.appendChild(el("span", "mode-title", meta.title));
       mt.appendChild(el("span", "mode-desc", meta.desc));
       b.appendChild(mt);
-      b.appendChild(el("span", "mode-go", "▶"));
+      b.appendChild(el("span", "mode-go", "→"));
       b.addEventListener("click", () => startMode(topic, mode, level));
       list.appendChild(b);
     });
@@ -562,7 +565,7 @@
     wrap.style.setProperty("--tc", session.topic.color);
 
     const head = el("div", "lesson-head");
-    const quit = el("button", "quit", "✕");
+    const quit = el("button", "quit", "×");
     quit.setAttribute("aria-label", "Quit");
     quit.addEventListener("click", () => renderTopic(session.topic));
     head.appendChild(quit);
@@ -595,7 +598,7 @@
   function showResult(body, foot, isCorrect, correctText, onNext) {
     foot.classList.add(isCorrect ? "ok" : "bad");
     const banner = el("div", "result " + (isCorrect ? "ok" : "bad"));
-    banner.appendChild(el("div", "result-title", isCorrect ? "✓  Nice!" : "✗  Not quite"));
+    banner.appendChild(el("div", "result-title", isCorrect ? "Correct" : "Not quite"));
     if (!isCorrect && correctText) banner.appendChild(el("div", "result-sol", "Answer: " + correctText));
     foot.innerHTML = "";
     foot.appendChild(banner);
@@ -813,7 +816,12 @@
           "Note: no Tamil voice found on this device, so the transliteration is shown to help."));
       }
       const big = el("div", "listen-card");
-      const play = el("button", "listen-play", "🔊");
+      const play = el("button", "listen-play");
+      play.innerHTML =
+        '<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">' +
+        '<path d="M4 9.5h3.2L12 5v14l-4.8-4.5H4z" fill="currentColor"/>' +
+        '<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" ' +
+        'stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
       play.type = "button";
       play.addEventListener("click", () => speak(ex.audio));
       big.appendChild(play);
@@ -863,7 +871,7 @@
     wrap.style.setProperty("--tc", topic.color);
 
     const head = el("div", "lesson-head");
-    const quit = el("button", "quit", "✕");
+    const quit = el("button", "quit", "×");
     quit.setAttribute("aria-label", "Back");
     quit.addEventListener("click", () => renderTopic(topic));
     head.appendChild(quit);
@@ -927,7 +935,7 @@
       wrap.style.setProperty("--tc", topic.color);
 
       const head = el("div", "lesson-head");
-      const quit = el("button", "quit", "✕");
+      const quit = el("button", "quit", "×");
       quit.addEventListener("click", () => renderTopic(topic));
       head.appendChild(quit);
       const bar = el("div", "progress");
@@ -996,11 +1004,12 @@
     const wrap = el("div", "lesson done-screen");
     wrap.style.setProperty("--tc", session.topic.color);
     const acc = session.total ? Math.round((session.correct / session.total) * 100) : 100;
-    wrap.appendChild(el("div", "big-emoji", acc >= 80 ? "🎉" : "💪"));
-    wrap.appendChild(el("h2", "done-title", acc >= 80 ? "Great work!" : "Keep practising!"));
+    wrap.appendChild(el("div", "big-emoji", acc + "%"));
+    wrap.appendChild(el("h2", "done-title", acc >= 80 ? "Well done." : "Keep practising."));
 
     const stats = el("div", "done-stats");
-    [["+" + gain, "XP earned"], [acc + "%", "Accuracy"], ["🔥 " + state.streak, "Day streak"]]
+    [["+" + gain, "XP earned"], [session.correct + " / " + session.total, "Correct"],
+     [state.streak, "Day streak"]]
       .forEach(([num, label]) => {
         const s = el("div", "done-stat");
         s.appendChild(el("div", "done-stat-num", num));
