@@ -225,7 +225,7 @@
     hero.appendChild(el("div", "hero-logo", "கிளி"));
     const hg = el("div");
     hg.appendChild(el("h1", "hero-title", "Learn Tamil"));
-    hg.appendChild(el("p", "hero-sub", "The alphabet, 1,500 words, sentences, verb conjugation and the Tirukkuṟaḷ — practise however suits you."));
+    hg.appendChild(el("p", "hero-sub", "The alphabet, 1,300 words across 24 topics, sentences, verb conjugation and the Tirukkuṟaḷ — practise however suits you."));
     hero.appendChild(hg);
     wrap.appendChild(hero);
 

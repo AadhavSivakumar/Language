@@ -7,9 +7,11 @@ locally, so it works offline once loaded and is perfect for **GitHub Pages**.
 ## Features
 
 - **Pick a topic, then pick how you practise.** No fixed path — you choose.
-  **17 topics:** the alphabet, greetings, numbers, family, pronouns, food,
-  animals, colours, the body, home & objects, nature, time & days, verbs,
-  adjectives, places, question words, and full sentences.
+  **25 word topics** to browse: the alphabet, greetings, numbers, colours,
+  family, people, pronouns, question words, little words, adjectives, adverbs,
+  verbs, food & drink, the body, health, clothing, home & objects, animals,
+  nature, places, travel & transport, time & days, work & money, school &
+  learning and technology — plus a full **sentences** set.
 - **Seven practice modes**, generated fresh from the content each time:
   - **Flashcards** — flip to reveal, learn at your own pace (not scored)
   - **Multiple choice** — pick the meaning (Tamil→English or English→Tamil)
@@ -18,7 +20,7 @@ locally, so it works offline once loaded and is perfect for **GitHub Pages**.
   - **Listening** — hear the Tamil, choose the meaning
   - **Build a sentence** — tap word-tiles in order
   - **Translate** — read a Tamil sentence, choose the English
-- **~200 words and ~35 sentences**, each with **Tamil script + transliteration
+- **~1,300 words and ~85 sentences**, each with **Tamil script + transliteration
   + English**, so beginners always have three anchors.
 - **Tamil audio** via the browser's speech synthesis (tap 🔊). If no Tamil voice
   is installed, the listening mode falls back to showing the transliteration.
@@ -66,7 +68,7 @@ Every practice mode picks up the new content automatically.
 | `index.html` | Page shell and script tags |
 | `styles.css` | All styling (Duolingo-flavoured, theme-aware) |
 | `data.js` | The entire course as data |
-| `app.js` | Router, lesson engine, exercise types, progress/XP/streak/hearts |
+| `app.js` | Router, lesson engine, exercise types, progress/XP/streak |
 
 ## Notes on the Tamil
 
