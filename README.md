@@ -12,14 +12,30 @@ locally, so it works offline once loaded and is perfect for **GitHub Pages**.
   verbs, food & drink, the body, health, clothing, home & objects, animals,
   nature, places, travel & transport, time & days, work & money, school &
   learning and technology — plus a full **sentences** set.
-- **Seven practice modes**, generated fresh from the content each time:
+- **Eight practice modes**, generated fresh from the content each time:
   - **Flashcards** — flip to reveal, learn at your own pace (not scored)
   - **Multiple choice** — pick the meaning (Tamil→English or English→Tamil)
   - **Matching** — tap the Tamil word and its English pair
   - **Type it** — free typing with lenient checking (script *or* transliteration)
   - **Listening** — hear the Tamil, choose the meaning
+  - **Speak it** — say the word aloud; your mic checks you (Web Speech, `ta-IN`),
+    with an honest self-check fallback where recognition isn't available
   - **Build a sentence** — tap word-tiles in order
   - **Translate** — read a Tamil sentence, choose the English
+- **Spaced-repetition Review.** Every answer updates a per-word memory record
+  (SM-2-style) in `localStorage`; the **Review** track always pools the words
+  you're due to revisit, so weak words come back sooner and mastered ones fade.
+- **Progress & mastery.** A progress screen with a daily-XP goal ring, a streak
+  calendar, and per-topic mastery bars (a word is "learned" after two correct
+  reps).
+- **Word search.** Search all ~1,300 words by English, Tamil or transliteration,
+  then jump straight into practice on whatever the search turns up.
+- **Username sync.** Pick a username and your progress is stored in this repo as
+  [`progress/<username>.json`](./progress) — versioned in git, no third-party
+  service. Because the repo is public, *loading* on a new device needs nothing but
+  the username; *saving* needs a GitHub token you paste once per device (kept in
+  that browser only, never committed). Devices merge instead of overwriting, so
+  practising in two places never loses work.
 - **~1,300 words and ~85 sentences**, each with **Tamil script + transliteration
   + English**, so beginners always have three anchors.
 - **Tamil audio** via the browser's speech synthesis (tap 🔊). If no Tamil voice
