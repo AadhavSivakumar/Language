@@ -42,6 +42,21 @@ locally, so it works offline once loaded and is perfect for **GitHub Pages**.
   is installed, the listening mode falls back to showing the transliteration.
 - **XP and a day streak**, saved in `localStorage`. No hearts, no lock-outs —
   practise as much as you like.
+- **Full keyboard control.** Every mode is playable without the mouse, and each
+  screen shows its own shortcuts:
+
+  | Keys | Where | Does |
+  |------|-------|------|
+  | <kbd>←</kbd> <kbd>→</kbd> | Flashcards | previous / next card |
+  | <kbd>space</kbd> | Flashcards | flip the card |
+  | <kbd>1</kbd>–<kbd>4</kbd> | Choice, listening | pick that option |
+  | <kbd>space</kbd> | Listening | replay the audio |
+  | <kbd>space</kbd> / <kbd>r</kbd> | Speak it | start the mic / hear it again |
+  | <kbd>1</kbd>–<kbd>9</kbd>, <kbd>⌫</kbd> | Build a sentence | add a word / undo |
+  | <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> | Matching, any list | move between tiles |
+  | <kbd>↵</kbd> | everywhere | check, then continue |
+  | <kbd>esc</kbd> | everywhere | leave the lesson |
+
 - **Light & dark mode**, responsive for phone and desktop.
 
 ## Run locally

@@ -301,6 +301,80 @@
   function sample(arr, n) { return shuffle(arr).slice(0, n); }
   const isTamil = (s) => /[஀-௿]/.test(s || "");
 
+  /* --------------------------- Keyboard control --------------------------
+   * The active view registers a handler in `onKey`; one global listener
+   * dispatches to it. Typing in a text field is never hijacked (Escape aside),
+   * and focused buttons keep their native Enter/Space activation. */
+  let onKey = null;
+  const isTypingTarget = (t) =>
+    t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+
+  document.addEventListener("keydown", (e) => {
+    if (!onKey || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (isTypingTarget(e.target) && e.key !== "Escape") return;
+    onKey(e);
+  });
+
+  const ARROW_NEXT = { ArrowDown: 1, ArrowRight: 1 };
+  const ARROW_PREV = { ArrowUp: -1, ArrowLeft: -1 };
+
+  // Move DOM focus through a list; wraps at both ends.
+  function focusMove(list, delta) {
+    if (!list.length) return;
+    const cur = list.indexOf(document.activeElement);
+    const next = cur < 0 ? (delta > 0 ? 0 : list.length - 1)
+                         : (cur + delta + list.length) % list.length;
+    list[next].focus();
+  }
+
+  /* Escape always leaves the lesson; everything else defers to the view. */
+  function setKeys(session, handler) {
+    onKey = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (session) renderTopic(session.topic); else renderHome();
+        return;
+      }
+      if (handler) handler(e);
+    };
+  }
+
+  /* Shared bindings for any exercise that is "pick one of N, then confirm":
+   *   1-9      choose that option        ↑↓←→  move between options
+   *   Enter    check / continue          Esc   quit  */
+  function choiceKeys(body, grid) {
+    return (e) => {
+      const choices = Array.prototype.slice.call(
+        grid.querySelectorAll(".choice:not([disabled])"));
+      if (/^[1-9]$/.test(e.key)) {
+        const pick = choices[parseInt(e.key, 10) - 1];
+        if (pick) { e.preventDefault(); pick.click(); pick.focus(); }
+        return;
+      }
+      if (ARROW_NEXT[e.key]) { e.preventDefault(); focusMove(choices, 1); return; }
+      if (ARROW_PREV[e.key]) { e.preventDefault(); focusMove(choices, -1); return; }
+      if (e.key === "Enter") {
+        // A focused footer button handles Enter itself.
+        if (e.target && e.target.classList && e.target.classList.contains("btn")) return;
+        const live = body.querySelector(".check-foot .btn:not([disabled])");
+        if (live) { e.preventDefault(); live.click(); }
+      }
+    };
+  }
+
+  // A muted line of hints shown under an exercise.
+  function keyHint(text) {
+    const h = el("div", "key-hint");
+    text.split("|").forEach(part => {
+      const [keys, label] = part.split("=");
+      const span = el("span", "key-hint-item");
+      keys.trim().split("+").forEach(k => span.appendChild(el("kbd", null, k.trim())));
+      span.appendChild(el("span", "key-hint-label", label.trim()));
+      h.appendChild(span);
+    });
+    return h;
+  }
+
   /* -------------------------- Tamil text-to-speech ----------------------- */
   let taVoice = null;
   function pickVoice() {
@@ -447,7 +521,7 @@
   function renderHome() {
     if ("speechSynthesis" in window) speechSynthesis.cancel();
     renderTopbar();
-    app.innerHTML = "";
+    app.innerHTML = ""; onKey = null;
     const wrap = el("div", "home");
 
     const hero = el("div", "hero");
@@ -518,7 +592,7 @@
   /* ============================= ACCOUNT VIEW ============================ */
   function renderAccount() {
     renderTopbar();
-    app.innerHTML = "";
+    app.innerHTML = ""; onKey = null;
     const wrap = el("div", "topic-view account-view");
 
     const back = el("button", "back-btn", "← Home");
@@ -637,7 +711,7 @@
   /* ============================ PROGRESS VIEW ============================ */
   function renderProgress() {
     renderTopbar();
-    app.innerHTML = "";
+    app.innerHTML = ""; onKey = null;
     const wrap = el("div", "topic-view progress-view");
 
     const back = el("button", "back-btn", "← Home");
@@ -721,7 +795,7 @@
   /* ============================= WORD BROWSER =========================== */
   function renderBrowse() {
     renderTopbar();
-    app.innerHTML = "";
+    app.innerHTML = ""; onKey = null;
     const wrap = el("div", "topic-view browse-view");
 
     const back = el("button", "back-btn", "← Home");
@@ -802,7 +876,7 @@
   /* ============================== TOPIC VIEW ============================= */
   function renderTopic(topic) {
     renderTopbar();
-    app.innerHTML = "";
+    app.innerHTML = ""; onKey = null;
     const wrap = el("div", "topic-view");
     wrap.style.setProperty("--tc", topic.color);
 
@@ -1105,7 +1179,7 @@
   /* ------------------------- Shared lesson chrome ------------------------ */
   function lessonChrome(session, bodyBuilder) {
     renderTopbar();
-    app.innerHTML = "";
+    app.innerHTML = ""; onKey = null;
     const wrap = el("div", "lesson");
     wrap.style.setProperty("--tc", session.topic.color);
 
@@ -1169,9 +1243,10 @@
 
       let selected = null;
       const grid = el("div", "choices");
-      shuffle(ex.choices).forEach(choice => {
+      shuffle(ex.choices).forEach((choice, i) => {
         const c = el("button", "choice");
         c.type = "button";
+        c.appendChild(el("span", "choice-num", String(i + 1)));
         c.appendChild(el("span", "choice-text", choice));
         if (isTamil(choice)) {
           if (ex.subFor && ex.subFor[choice]) c.appendChild(el("span", "choice-sub", ex.subFor[choice]));
@@ -1186,6 +1261,8 @@
         grid.appendChild(c);
       });
       body.appendChild(grid);
+      body.appendChild(keyHint("1-4=choose|↵=check|esc=quit"));
+      setKeys(session, choiceKeys(body, grid));
 
       const { foot, btn } = footerCheck(body, {
         disabled: true,
@@ -1265,6 +1342,31 @@
       const foot = el("div", "check-foot");
       foot.appendChild(el("div", "hint", "Tap a Tamil word, then its English match."));
       body.appendChild(foot);
+      body.appendChild(keyHint("↑↓=move|←→=switch column|↵=select|esc=quit"));
+
+      /* Arrow keys drive a focus cursor over the two columns; Enter/Space
+       * activate the focused tile natively. */
+      setKeys(session, (e) => {
+        if (e.key === "Enter" || e.key === " " || e.code === "Space") return;  // native
+        const live = (col) => Array.prototype.slice.call(
+          col.querySelectorAll(".match-tile:not([disabled])"));
+        const L = live(leftCol), R = live(rightCol);
+        const inL = L.indexOf(document.activeElement), inR = R.indexOf(document.activeElement);
+        const here = inL >= 0 ? L : inR >= 0 ? R : null;
+        const idx = inL >= 0 ? inL : inR;
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault();
+          if (!here) { (L[0] || R[0] || {}).focus && (L[0] || R[0]).focus(); return; }
+          focusMove(here, e.key === "ArrowDown" ? 1 : -1);
+          return;
+        }
+        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+          e.preventDefault();
+          const target = (inL >= 0) ? R : L;                 // jump columns
+          if (!target.length) return;
+          (target[Math.min(idx < 0 ? 0 : idx, target.length - 1)] || target[0]).focus();
+        }
+      });
     });
   }
 
@@ -1313,6 +1415,29 @@
           showResult(body, foot, ok, ex.answer.join(" "), () => advance(session, ok, ex));
         },
       });
+      body.appendChild(keyHint("1-9=add word|⌫=undo|↵=check|esc=quit"));
+
+      setKeys(session, (e) => {
+        const free = Array.prototype.slice.call(bank.querySelectorAll(".token:not(.used)"));
+        if (/^[1-9]$/.test(e.key)) {
+          const pick = free[parseInt(e.key, 10) - 1];
+          if (pick) { e.preventDefault(); pick.click(); }
+          return;
+        }
+        if (e.key === "Backspace") {
+          e.preventDefault();
+          const last = answerRow.lastElementChild;
+          if (last) last.click();                       // chips remove themselves
+          return;
+        }
+        if (ARROW_NEXT[e.key]) { e.preventDefault(); focusMove(free, 1); return; }
+        if (ARROW_PREV[e.key]) { e.preventDefault(); focusMove(free, -1); return; }
+        if (e.key === "Enter") {
+          if (e.target && e.target.classList && e.target.classList.contains("btn")) return;
+          const live = body.querySelector(".check-foot .btn:not([disabled])");
+          if (live) { e.preventDefault(); live.click(); }
+        }
+      });
     });
   }
 
@@ -1344,9 +1469,19 @@
         showResult(body, foot, ok, ex.accept[0], () => advance(session, ok, ex));
       }
       const { foot, btn } = footerCheck(body, { disabled: true, onClick: check });
+      body.appendChild(keyHint("↵=check|esc=quit"));
       input.addEventListener("input", () => { btn.disabled = !input.value.trim(); });
       input.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && input.value.trim() && !input.disabled) check();
+      });
+      // Escape works even while the field has focus; Enter on the result screen
+      // continues without needing to leave the keyboard.
+      setKeys(session, (e) => {
+        if (e.key === "Enter" && input.disabled) {
+          if (e.target && e.target.classList && e.target.classList.contains("btn")) return;
+          const live = body.querySelector(".check-foot .btn:not([disabled])");
+          if (live) { e.preventDefault(); live.click(); }
+        }
       });
       setTimeout(() => input.focus(), 50);
     });
@@ -1377,9 +1512,10 @@
 
       let selected = null;
       const grid = el("div", "choices");
-      shuffle(ex.choices).forEach(choice => {
+      shuffle(ex.choices).forEach((choice, i) => {
         const c = el("button", "choice");
         c.type = "button";
+        c.appendChild(el("span", "choice-num", String(i + 1)));
         c.appendChild(el("span", "choice-text", choice));
         c.addEventListener("click", () => {
           if (foot.classList.contains("ok") || foot.classList.contains("bad")) return;
@@ -1389,6 +1525,16 @@
         grid.appendChild(c);
       });
       body.appendChild(grid);
+      body.appendChild(keyHint("1-4=choose|space=replay|↵=check|esc=quit"));
+
+      const baseKeys = choiceKeys(body, grid);
+      setKeys(session, (e) => {
+        if (e.key === " " || e.code === "Space") {
+          if (e.target && e.target.tagName === "BUTTON") return;   // native activation
+          e.preventDefault(); speak(ex.audio); return;
+        }
+        baseKeys(e);
+      });
 
       const { foot, btn } = footerCheck(body, {
         disabled: true,
@@ -1457,6 +1603,18 @@
         label: "Skip",
         onClick: () => { if (!done) advance(session, false, ex); },
       });
+      body.appendChild(keyHint("space=speak|r=hear it|↵=continue|esc=quit"));
+
+      setKeys(session, (e) => {
+        if (e.target && e.target.tagName === "BUTTON" &&
+            (e.key === "Enter" || e.key === " " || e.code === "Space")) return;
+        if (e.key === " " || e.code === "Space") { e.preventDefault(); mic.click(); return; }
+        if (e.key === "r" || e.key === "R") { e.preventDefault(); speak(ex.ta); return; }
+        if (e.key === "Enter") {
+          const live = body.querySelector(".check-foot .btn:not([disabled])");
+          if (live) { e.preventDefault(); live.click(); }
+        }
+      });
 
       function finish(ok, heardText) {
         if (done) return; done = true;
@@ -1515,7 +1673,7 @@
    * its two metrical lines with transliteration, meaning and a speak button. */
   function renderKuralReader(topic) {
     renderTopbar();
-    app.innerHTML = "";
+    app.innerHTML = ""; onKey = null;
     const wrap = el("div", "lesson kural-reader");
     wrap.style.setProperty("--tc", topic.color);
 
@@ -1581,7 +1739,7 @@
 
     function render() {
       renderTopbar();
-      app.innerHTML = "";
+      app.innerHTML = ""; onKey = null;
       const wrap = el("div", "lesson");
       wrap.style.setProperty("--tc", topic.color);
 
@@ -1616,14 +1774,29 @@
       const foot = el("div", "check-foot flash-nav");
       const prev = el("button", "btn btn-ghost", "‹ Back");
       prev.disabled = i === 0;
-      prev.addEventListener("click", () => { if (i > 0) { i--; flipped = false; render(); } });
+      const goPrev = () => { if (i > 0) { i--; flipped = false; render(); } };
+      prev.addEventListener("click", goPrev);
       const next = el("button", "btn btn-primary", i === cards.length - 1 ? "Finish" : "Next ›");
-      next.addEventListener("click", () => {
+      const goNext = () => {
         if (i === cards.length - 1) { grantXp(topic, cards.length, cards.length); renderTopic(topic); }
         else { i++; flipped = false; render(); }
-      });
+      };
+      next.addEventListener("click", goNext);
       foot.appendChild(prev); foot.appendChild(next);
       body.appendChild(foot);
+      body.appendChild(keyHint("←=back|→=next|space=flip|esc=quit"));
+
+      /* ← → move through the deck, Space/↑/↓ flips, Enter advances. */
+      setKeys({ topic }, (e) => {
+        // A focused button keeps its native Enter/Space activation.
+        if (e.target && e.target.tagName === "BUTTON" &&
+            (e.key === "Enter" || e.key === " " || e.code === "Space")) return;
+        if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); return; }
+        if (e.key === "ArrowRight" || e.key === "Enter") { e.preventDefault(); goNext(); return; }
+        if (e.key === " " || e.code === "Space" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+          e.preventDefault(); flipped = !flipped; render();
+        }
+      });
 
       wrap.appendChild(body);
       app.appendChild(wrap);
@@ -1660,7 +1833,7 @@
     if ("speechSynthesis" in window) speechSynthesis.cancel();
 
     renderTopbar();
-    app.innerHTML = "";
+    app.innerHTML = ""; onKey = null;
     const wrap = el("div", "lesson done-screen");
     wrap.style.setProperty("--tc", session.topic.color);
     const acc = session.total ? Math.round((session.correct / session.total) * 100) : 100;
