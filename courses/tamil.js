@@ -8,20 +8,56 @@
 (function () {
   "use strict";
 
-/* ------------------------------ Alphabet ------------------------------- */
-// Exposed as items { ta, tr, en } where en is the romanised sound.
+/* ------------------------------ Alphabet -------------------------------
+ * Tamil writes 12 uyir (vowels) and 18 mey (consonants); every ordinary
+ * letter you read is one of the 216 uyirmey formed by combining the two,
+ * plus the āytam. The six grantha letters are borrowed, used for Sanskrit
+ * and English sounds. `en` is the romanised sound with a note.
+ * --------------------------------------------------------------------- */
 const VOWELS = [
-  ["அ","a"],["ஆ","aa"],["இ","i"],["ஈ","ii"],["உ","u"],["ஊ","uu"],
-  ["எ","e"],["ஏ","ee"],["ஐ","ai"],["ஒ","o"],["ஓ","oo"],["ஔ","au"],
+  ["அ","a","short a — as in 'about'"],
+  ["ஆ","ā","long a — as in 'father'"],
+  ["இ","i","short i — as in 'sit'"],
+  ["ஈ","ī","long i — as in 'see'"],
+  ["உ","u","short u — as in 'put'"],
+  ["ஊ","ū","long u — as in 'food'"],
+  ["எ","e","short e — as in 'pet'"],
+  ["ஏ","ē","long e — as in 'they'"],
+  ["ஐ","ai","as in 'aisle'"],
+  ["ஒ","o","short o — as in 'often'"],
+  ["ஓ","ō","long o — as in 'go'"],
+  ["ஔ","au","as in 'how'"],
+  ["ஃ","aḵ","āytam — the third sound, neither vowel nor consonant"],
 ];
 const CONSONANTS = [
-  ["க்","k"],["ங்","ṅ"],["ச்","c"],["ஞ்","ñ"],["ட்","ṭ"],["ண்","ṇ"],
-  ["த்","t"],["ந்","n"],["ப்","p"],["ம்","m"],["ய்","y"],["ர்","r"],
-  ["ல்","l"],["வ்","v"],["ழ்","ḻ"],["ள்","ḷ"],["ற்","ṟ"],["ன்","ṉ"],
+  ["க்","k","vallinam — hard k / g"],
+  ["ங்","ṅ","mellinam — ng, as in 'sing'"],
+  ["ச்","c","vallinam — ch / s"],
+  ["ஞ்","ñ","mellinam — ny, as in 'canyon'"],
+  ["ட்","ṭ","vallinam — retroflex t, tongue curled back"],
+  ["ண்","ṇ","mellinam — retroflex n"],
+  ["த்","t","vallinam — soft t, tongue on the teeth"],
+  ["ந்","n","mellinam — dental n"],
+  ["ப்","p","vallinam — p / b"],
+  ["ம்","m","mellinam — m"],
+  ["ய்","y","iṭaiyinam — y"],
+  ["ர்","r","iṭaiyinam — tapped r"],
+  ["ல்","l","iṭaiyinam — l"],
+  ["வ்","v","iṭaiyinam — v"],
+  ["ழ்","ḻ","iṭaiyinam — the retroflex sound unique to Tamil"],
+  ["ள்","ḷ","iṭaiyinam — retroflex l"],
+  ["ற்","ṟ","vallinam — trilled hard r"],
+  ["ன்","ṉ","mellinam — alveolar n"],
+  ["ஜ்","j","grantha — j, for borrowed words"],
+  ["ஷ்","ṣ","grantha — retroflex sh"],
+  ["ஸ்","s","grantha — s"],
+  ["ஹ்","h","grantha — h"],
+  ["க்ஷ்","kṣ","grantha — ksha"],
+  ["ஶ்","ś","grantha — palatal sh"],
 ];
 const ALPHABET = {
-  vowels: VOWELS.map(([ta, tr]) => ({ ta, tr, en: tr, topic: "alphabet" })),
-  consonants: CONSONANTS.map(([ta, tr]) => ({ ta, tr, en: tr, topic: "alphabet" })),
+  vowels: VOWELS.map(([ta, tr, en]) => ({ ta, tr, en, topic: "alphabet" })),
+  consonants: CONSONANTS.map(([ta, tr, en]) => ({ ta, tr, en, topic: "alphabet" })),
 };
 
 /* ------------------------------ Vocabulary ----------------------------- */
@@ -2064,6 +2100,7 @@ window.KILI.register("tamil", {
   ui: { account: "கணக்கு", progress: "முன்னேற்றம்", search: "தேடல்" },
   alphabet: ALPHABET,
   alphabetTitle: "Alphabet",
+  alphabetLabels: ["Uyir — vowels", "Mey — consonants"],
   vocab: VOCAB,
   sentences: SENTENCES,
   conjugation: CONJUGATION,

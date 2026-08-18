@@ -38,6 +38,8 @@
   let CONJUGATION = [];
   let READING = null;       // optional reading collection (e.g. the Tirukkuṟaḷ)
   let PRACTICE = [];
+  let ALPHA_CARDS = [];     // the writing-system section: whole set + halves
+  let ALPHA_TITLE = "";
 
   const app = document.getElementById("app");
   const topbar = document.getElementById("topbar");
@@ -96,6 +98,39 @@
       icon: icons[t.id] || t.title,
       title: t.kind === "alpha" && course.alphabetTitle ? course.alphabetTitle : t.title,
     }));
+
+    /* The writing system gets a section of its own on the home screen: the
+     * whole set, plus each of its two halves (vowels/consonants, hiragana/
+     * katakana, initials/tones — whatever the course calls them). Every
+     * language has one, so the section is always there. */
+    ALPHA_CARDS = [];
+    if (ALPHABET) {
+      const labels = course.alphabetLabels || ["Vowels", "Consonants"];
+      const unit = course.alphabetUnit || "letters";   // "kana", "sounds", …
+      const whole = ALPHABET.vowels.concat(ALPHABET.consonants);
+      const alphaTopic = TOPICS.filter(t => t.kind === "alpha")[0];
+      if (alphaTopic) {
+        ALPHA_CARDS.push(Object.assign({}, alphaTopic, {
+          unit: unit, desc: whole.length + " " + unit + " · the whole set",
+        }));
+      }
+      [ALPHABET.vowels, ALPHABET.consonants].forEach((items, i) => {
+        if (!items || items.length < 3) return;
+        ALPHA_CARDS.push({
+          id: "alpha-" + i, title: labels[i] || labels[0],
+          icon: (items[0] && items[0].ta) || labels[i],
+          color: palette[(i + 1) % palette.length].light,
+          colorDark: palette[(i + 1) % palette.length].dark,
+          kind: "practice", pool: "custom", unit: unit, items,
+          desc: items.length + " to learn",
+        });
+      });
+      // The heading always says "alphabet"; the note carries the scale, and
+      // the first card carries whatever this language calls its own system.
+      ALPHA_TITLE = whole.length + " " + unit;
+    } else {
+      ALPHA_TITLE = "";
+    }
 
     const pi = course.practiceIcons || {};
     const pc = (n) => palette[n % palette.length].light;
@@ -728,11 +763,14 @@
       if (topic.pool === "reading")
         return READING ? READING.items.length + " " + (READING.unit || "texts") : "";
       if (topic.pool === "review") { const d = dueCount(); return d ? d + " due" : "all caught up"; }
-      if (topic.pool === "custom") return (topic.items || []).length + " words";
+      if (topic.pool === "custom")
+        return (topic.items || []).length + " " + (topic.unit || "words");
       if (topic.pool === "mixed" || topic.pool === "listening")
         return (VOCAB.length + SENTENCES.length + conjugationForms().length) + " items";
       return VOCAB.length + " words";
     }
+    if (topic.kind === "alpha")
+      return topicVocab(topic.id).length + " " + (topic.unit || "letters");
     return topic.kind === "sentence"
       ? topicSentences(topic.id).length + " sentences"
       : topicVocab(topic.id).length + " words";
@@ -744,7 +782,9 @@
       if (topic.pool === "conjugation") return ["conjugate", "type", "flash"];
       if (topic.pool === "reading") return ["kread", "translate", "kline", "smatch", "flash"];
       if (topic.pool === "listening") return ["listen", "slisten", "flash"];
-      if (topic.pool === "review" || topic.pool === "custom")
+      if (topic.pool === "custom")
+        return ["flash", "choice", "match", "type", "listen", "speak"];
+      if (topic.pool === "review")
         return ["choice", "type", "listen", "speak", "flash"];
       return ["choice", "match", "type", "listen", "speak", "flash"];
     }
@@ -856,6 +896,16 @@
       return card;
     };
 
+    /* -- the writing system, always its own section -- */
+    if (ALPHA_CARDS.length) {
+      const alphaTitle = el("h2", "section-title", "Start with the alphabet");
+      alphaTitle.appendChild(el("span", "section-note", ALPHA_TITLE));
+      wrap.appendChild(alphaTitle);
+      const alphaGrid = el("div", "topic-grid alpha-grid");
+      ALPHA_CARDS.forEach(c => alphaGrid.appendChild(makeCard(c, c.desc)));
+      wrap.appendChild(alphaGrid);
+    }
+
     // Cross-topic practice tracks first — "what do you want to practise?"
     const pracTitle = el("h2", "section-title", "Choose what to practise");
     wrap.appendChild(pracTitle);
@@ -873,10 +923,12 @@
     // Then browse individual topics.
     const topicTitle = el("h2", "section-title", "Or explore a topic");
     topicTitle.appendChild(el("span", "section-note",
-      VOCAB.length + " words · " + TOPICS.length + " topics"));
+      VOCAB.length + " words · " + TOPICS.filter(t => t.kind !== "alpha").length + " topics"));
     wrap.appendChild(topicTitle);
     const grid = el("div", "topic-grid");
-    TOPICS.forEach(topic => grid.appendChild(makeCard(topic, countLabel(topic))));
+    // The alphabet has its own section above, so it isn't repeated here.
+    TOPICS.filter(t => t.kind !== "alpha")
+      .forEach(topic => grid.appendChild(makeCard(topic, countLabel(topic))));
     wrap.appendChild(grid);
 
     const footer = el("div", "home-footer");

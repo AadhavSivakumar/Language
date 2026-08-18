@@ -752,6 +752,8 @@
     ui: { account: "アカウント", progress: "進捗", search: "検索" },
     alphabet: ALPHABET,
     alphabetTitle: "Hiragana & katakana",
+    alphabetLabels: ["Hiragana", "Katakana"],
+    alphabetUnit: "kana",
     vocab: VOCAB,
     sentences: SENTENCES,
     conjugation: CONJUGATION,

@@ -767,6 +767,7 @@
     ui: { account: "Compte", progress: "Progrès", search: "Recherche" },
     alphabet: ALPHABET,
     alphabetTitle: "Alphabet & sounds",
+    alphabetLabels: ["Letters", "Sounds & spelling"],
     vocab: VOCAB,
     sentences: SENTENCES,
     conjugation: CONJUGATION,

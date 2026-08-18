@@ -34,6 +34,25 @@ pronunciation or transliteration line, and the English meaning. In the English
 course the third line is a plain-English definition instead, which is what a
 vocabulary builder actually needs.
 
+## The alphabet, in every language
+
+Every course opens with its writing system, as a section of its own above the
+topics — never buried in the grid. Three cards: the whole set, and each of its
+two halves, drillable with flashcards, matching, listening, typing and speech.
+
+| Course | Section | Halves |
+|--------|---------|--------|
+| Tamil | Alphabet · 37 letters | uyir (vowels, with āytam) · mey (consonants, with the grantha letters) |
+| Chinese | Pinyin & tones · 67 sounds | 21 initials + 36 finals · the five tones and how they shift |
+| Japanese | Hiragana & katakana · 92 kana | hiragana · katakana |
+| Hindi | Devanagari · 56 letters | svar with their mātrās · vyañjan, including the conjuncts and borrowed letters |
+| Arabic | The abjad · 38 letters | the 28 letters · the vowel marks, shadda, sun letters |
+| Spanish, French, German, Italian, Portuguese, English | Alphabet & sounds | the letters with their names · the digraphs and spellings that don't say what they look like |
+
+Chinese and Japanese have no alphabet in the strict sense, so they get the
+thing that actually does the job: the full pinyin sound system for Chinese,
+both kana syllabaries for Japanese.
+
 ## Getting around
 
 The top bar is the constant. The **wordmark on the left** always returns to the
@@ -59,7 +78,7 @@ the system theme.
 ## Features
 
 - **Pick a topic, then pick how you practise.** No fixed path — you choose.
-  24 word topics to browse: the alphabet or writing system, greetings, numbers,
+  24 word topics to browse: greetings, numbers,
   colours, family, people, pronouns, question words, little words, adjectives,
   adverbs, verbs, food & drink, the body, health, clothing, home & objects,
   animals, nature, places, travel & transport, time & days, work & money,

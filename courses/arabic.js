@@ -745,6 +745,7 @@
     ui: { account: "حِساب", progress: "تَقَدُّم", search: "بَحْث" },
     alphabet: ALPHABET,
     alphabetTitle: "The abjad",
+    alphabetLabels: ["Letters", "Marks & rules"],
     vocab: VOCAB,
     sentences: SENTENCES,
     conjugation: CONJUGATION,

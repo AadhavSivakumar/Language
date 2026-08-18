@@ -9,20 +9,56 @@
   "use strict";
   const { V, S, C, A } = window.KILI;
 
-  /* ------------------------------ Alphabet ------------------------------- */
+  /* ------------------------------ Alphabet -------------------------------
+   * The varṇamālā: 13 svar (vowels) with the mātrā each becomes when it
+   * follows a consonant, and 33 vyañjan (consonants), each of which carries
+   * an inherent "a" until a mātrā or a halant replaces it.
+   * -------------------------------------------------------------------- */
   const VOWELS = A([
-    ["अ", "a"], ["आ", "ā"], ["इ", "i"], ["ई", "ī"], ["उ", "u"], ["ऊ", "ū"],
-    ["ऋ", "ṛ"], ["ए", "e"], ["ऐ", "ai"], ["ओ", "o"], ["औ", "au"],
-    ["अं", "aṃ"], ["अः", "aḥ"],
+    ["अ", "a", "a — the inherent vowel, written with no mātrā"],
+    ["आ  ा", "ā", "long a — mātrā ा, as in का (kā)"],
+    ["इ  ि", "i", "short i — mātrā ि goes before, as in कि (ki)"],
+    ["ई  ी", "ī", "long i — mātrā ी, as in की (kī)"],
+    ["उ  ु", "u", "short u — mātrā ु below, as in कु (ku)"],
+    ["ऊ  ू", "ū", "long u — mātrā ू below, as in कू (kū)"],
+    ["ऋ  ृ", "ṛ", "vocalic r — mātrā ृ, as in कृ (kṛ)"],
+    ["ए  े", "e", "e — mātrā े above, as in के (ke)"],
+    ["ऐ  ै", "ai", "ai — mātrā ै above, as in कै (kai)"],
+    ["ओ  ो", "o", "o — mātrā ो, as in को (ko)"],
+    ["औ  ौ", "au", "au — mātrā ौ, as in कौ (kau)"],
+    ["अं  ं", "aṃ", "anusvāra — nasalises the vowel, as in हिंदी"],
+    ["अः  ः", "aḥ", "visarga — a breathed h at the end"],
+    ["अँ  ँ", "am̐", "candrabindu — a nasal vowel, as in हँसना"],
+    ["्", "halant", "removes the inherent a: क् is k, not ka"],
   ]);
   const CONSONANTS = A([
-    ["क", "ka"], ["ख", "kha"], ["ग", "ga"], ["घ", "gha"], ["ङ", "ṅa"],
-    ["च", "ca"], ["छ", "cha"], ["ज", "ja"], ["झ", "jha"], ["ञ", "ña"],
-    ["ट", "ṭa"], ["ठ", "ṭha"], ["ड", "ḍa"], ["ढ", "ḍha"], ["ण", "ṇa"],
-    ["त", "ta"], ["थ", "tha"], ["द", "da"], ["ध", "dha"], ["न", "na"],
-    ["प", "pa"], ["फ", "pha"], ["ब", "ba"], ["भ", "bha"], ["म", "ma"],
-    ["य", "ya"], ["र", "ra"], ["ल", "la"], ["व", "va"],
-    ["श", "śa"], ["ष", "ṣa"], ["स", "sa"], ["ह", "ha"],
+    ["क", "ka", "guttural — k"], ["ख", "kha", "guttural — k with a puff"],
+    ["ग", "ga", "guttural — g"], ["घ", "gha", "guttural — g with a puff"],
+    ["ङ", "ṅa", "guttural nasal — ng"],
+    ["च", "ca", "palatal — ch"], ["छ", "cha", "palatal — ch with a puff"],
+    ["ज", "ja", "palatal — j"], ["झ", "jha", "palatal — j with a puff"],
+    ["ञ", "ña", "palatal nasal — ny"],
+    ["ट", "ṭa", "retroflex — t, tongue curled back"],
+    ["ठ", "ṭha", "retroflex — t with a puff"],
+    ["ड", "ḍa", "retroflex — d"], ["ढ", "ḍha", "retroflex — d with a puff"],
+    ["ण", "ṇa", "retroflex nasal — n"],
+    ["त", "ta", "dental — t, tongue on the teeth"],
+    ["थ", "tha", "dental — t with a puff"],
+    ["द", "da", "dental — d"], ["ध", "dha", "dental — d with a puff"],
+    ["न", "na", "dental nasal — n"],
+    ["प", "pa", "labial — p"], ["फ", "pha", "labial — p with a puff"],
+    ["ब", "ba", "labial — b"], ["भ", "bha", "labial — b with a puff"],
+    ["म", "ma", "labial nasal — m"],
+    ["य", "ya", "semivowel — y"], ["र", "ra", "semivowel — r"],
+    ["ल", "la", "semivowel — l"], ["व", "va", "semivowel — v / w"],
+    ["श", "śa", "sibilant — sh, palatal"], ["ष", "ṣa", "sibilant — sh, retroflex"],
+    ["स", "sa", "sibilant — s"], ["ह", "ha", "aspirate — h"],
+    ["क्ष", "kṣa", "conjunct — ksh"], ["त्र", "tra", "conjunct — tr"],
+    ["ज्ञ", "jña", "conjunct — gy in modern Hindi"],
+    ["ड़", "ṛa", "flapped r, a dot below ड"],
+    ["ढ़", "ṛha", "flapped r with a puff"],
+    ["क़", "qa", "borrowed — a deep k, from Persian"],
+    ["ज़", "za", "borrowed — z"], ["फ़", "fa", "borrowed — f"],
   ]);
   const ALPHABET = { vowels: VOWELS, consonants: CONSONANTS };
 
@@ -732,6 +768,7 @@
     ui: { account: "खाता", progress: "प्रगति", search: "खोज" },
     alphabet: ALPHABET,
     alphabetTitle: "Devanagari",
+    alphabetLabels: ["Svar — vowels & mātrās", "Vyañjan — consonants"],
     vocab: VOCAB,
     sentences: SENTENCES,
     conjugation: CONJUGATION,

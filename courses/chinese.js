@@ -9,33 +9,67 @@
   const { V, S, C, A } = window.KILI;
 
   /* --------------------------- Pinyin & tones ----------------------------
-   * There is no alphabet to learn, but there is a sound system — the four
-   * tones and the initials/finals that pinyin spells out. That's what this
-   * "alphabet" topic drills. */
+   * Mandarin has no alphabet, but it has a sound system, and pinyin spells it
+   * out exactly: every syllable is one of 21 initials plus one of ~36 finals,
+   * carrying one of five tones. Learn those three lists and you can pronounce
+   * any character you are given the reading for — which is why this is the
+   * writing-system section for Chinese.
+   *
+   * `ta` is written as pinyin would write it (finals with the hyphen that
+   * marks where the initial goes), `tr` is how to say it, `en` the note.
+   * -------------------------------------------------------------------- */
   const TONES = A([
-    ["mā 妈", "mā", "1st tone — high and flat: mother"],
-    ["má 麻", "má", "2nd tone — rising: hemp"],
-    ["mǎ 马", "mǎ", "3rd tone — dipping: horse"],
-    ["mà 骂", "mà", "4th tone — falling: to scold"],
-    ["ma 吗", "ma", "neutral tone — question particle"],
-    ["ā", "ā", "1st tone on a"], ["á", "á", "2nd tone on a"],
-    ["ǎ", "ǎ", "3rd tone on a"], ["à", "à", "4th tone on a"],
+    ["mā 妈", "mā (high, flat)", "1st tone — hold it high and level: mother"],
+    ["má 麻", "má (rising)", "2nd tone — rise, as if asking: hemp"],
+    ["mǎ 马", "mǎ (dip, rise)", "3rd tone — dip low then rise: horse"],
+    ["mà 骂", "mà (falling)", "4th tone — drop sharply: to scold"],
+    ["ma 吗", "ma (light)", "neutral tone — short and toneless: makes a question"],
+    ["ā á ǎ à", "a", "the four tones written on a"],
+    ["ī í ǐ ì", "i", "the four tones written on i"],
+    ["ū ú ǔ ù", "u", "the four tones written on u"],
+    ["nǐ hǎo", "ní hǎo", "two 3rd tones: the first becomes a 2nd"],
+    ["bù → bú", "bú", "bù turns 2nd before another 4th tone"],
   ]);
-  const SOUNDS = A([
-    ["b p m f", "bo po mo fo", "lip sounds"],
-    ["d t n l", "de te ne le", "tongue-tip sounds"],
-    ["g k h", "ge ke he", "back-of-throat sounds"],
-    ["j q x", "ji qi xi", "said with a smile, tongue forward"],
-    ["zh ch sh r", "zhi chi shi ri", "tongue curled back"],
-    ["z c s", "zi ci si", "flat tongue, like 'dz ts s'"],
-    ["ü", "yu", "say 'ee' with rounded lips"],
-    ["-n vs -ng", "an / ang", "front n against back ng"],
-    ["ian", "yen", "spelled ian, said 'yen'"],
-    ["ui", "wei", "spelled ui, said 'wei'"],
-    ["iu", "iou", "spelled iu, said 'yo'"],
-    ["er 儿", "ér", "the r-coloured final"],
+  /* The 21 initials — the consonant a syllable can start with. */
+  const INITIALS = A([
+    ["b-", "b (as in 'spy')", "initial b"], ["p-", "p (puff of air)", "initial p"],
+    ["m-", "m", "initial m"], ["f-", "f", "initial f"],
+    ["d-", "d (as in 'sty')", "initial d"], ["t-", "t (puff of air)", "initial t"],
+    ["n-", "n", "initial n"], ["l-", "l", "initial l"],
+    ["g-", "g (as in 'sky')", "initial g"], ["k-", "k (puff of air)", "initial k"],
+    ["h-", "h (from the throat)", "initial h"],
+    ["j-", "j (smiling)", "initial j — tongue forward"],
+    ["q-", "ch (smiling)", "initial q — like 'cheese'"],
+    ["x-", "sh (smiling)", "initial x — like 'she'"],
+    ["zh-", "j (curled)", "initial zh — tongue curled back"],
+    ["ch-", "ch (curled)", "initial ch — tongue curled back"],
+    ["sh-", "sh (curled)", "initial sh — tongue curled back"],
+    ["r-", "r (curled)", "initial r — between r and zh"],
+    ["z-", "dz", "initial z — flat tongue"],
+    ["c-", "ts", "initial c — flat tongue, with a puff"],
+    ["s-", "s", "initial s — flat tongue"],
   ]);
-  const ALPHABET = { vowels: TONES, consonants: SOUNDS };
+  /* The finals — everything after the initial. */
+  const FINALS = A([
+    ["-a", "ah", "final a"], ["-o", "aw", "final o"], ["-e", "uh", "final e"],
+    ["-i", "ee", "final i"], ["-u", "oo", "final u"], ["-ü", "ew (rounded lips)", "final ü"],
+    ["-ai", "eye", "final ai"], ["-ei", "ay", "final ei"],
+    ["-ao", "ow", "final ao"], ["-ou", "oh", "final ou"],
+    ["-an", "ahn", "final an"], ["-en", "un", "final en"],
+    ["-ang", "ahng", "final ang"], ["-eng", "ung", "final eng"],
+    ["-ong", "oong", "final ong"], ["-er", "arr", "final er"],
+    ["-ia", "yah", "final ia"], ["-ie", "yeh", "final ie"],
+    ["-iao", "yow", "final iao"], ["-iu", "yoh", "final iu — said 'iou'"],
+    ["-ian", "yen", "final ian — said 'yen'"], ["-in", "een", "final in"],
+    ["-iang", "yahng", "final iang"], ["-ing", "ing", "final ing"],
+    ["-iong", "yoong", "final iong"],
+    ["-ua", "wah", "final ua"], ["-uo", "waw", "final uo"],
+    ["-uai", "why", "final uai"], ["-ui", "way", "final ui — said 'uei'"],
+    ["-uan", "wahn", "final uan"], ["-un", "wun", "final un"],
+    ["-uang", "wahng", "final uang"], ["-ueng", "wung", "final ueng"],
+    ["-üe", "yweh", "final üe"], ["-üan", "ywen", "final üan"], ["-ün", "ywin", "final ün"],
+  ]);
+  const ALPHABET = { vowels: INITIALS.concat(FINALS), consonants: TONES };
 
   /* ------------------------------ Vocabulary ----------------------------- */
   const VOCAB = [].concat(
@@ -729,6 +763,8 @@
     ui: { account: "账户", progress: "进度", search: "搜索" },
     alphabet: ALPHABET,
     alphabetTitle: "Pinyin & tones",
+    alphabetLabels: ["Initials & finals", "Tones"],
+    alphabetUnit: "sounds",
     vocab: VOCAB,
     sentences: SENTENCES,
     conjugation: CONJUGATION,

@@ -776,6 +776,7 @@
     ui: { account: "Account", progress: "Progressi", search: "Cerca" },
     alphabet: ALPHABET,
     alphabetTitle: "Alphabet & sounds",
+    alphabetLabels: ["Letters", "Sounds & spelling"],
     vocab: VOCAB,
     sentences: SENTENCES,
     conjugation: CONJUGATION,

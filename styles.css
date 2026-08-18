@@ -821,3 +821,10 @@ kbd {
   .picker-logo { font-size: 44px; }
   .lang-grid { grid-template-columns: 1fr; }
 }
+
+/* The alphabet section: three cards — the whole set and its two halves —
+   sitting above the practice tracks on every course home. The letter shown
+   as the card's mark is set larger than a topic icon, because here the
+   letterform is the subject rather than a label. */
+.alpha-grid { grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); }
+.alpha-grid .topic-icon { font-size: 24px; line-height: 1.2; }

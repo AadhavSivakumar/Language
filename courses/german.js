@@ -775,6 +775,7 @@
     ui: { account: "Konto", progress: "Fortschritt", search: "Suche" },
     alphabet: ALPHABET,
     alphabetTitle: "Alphabet & sounds",
+    alphabetLabels: ["Letters", "Sounds & spelling"],
     vocab: VOCAB,
     sentences: SENTENCES,
     conjugation: CONJUGATION,
