@@ -1,55 +1,50 @@
 /* ============================================================================
- * Kili · Learn Tamil — client-side app
+ * Kili · Learn a language — client-side app
  *
- * Pick a TOPIC, then pick a MODE. The app generates a practice session from
- * the word/sentence lists in data.js, so content and practice styles are fully
- * decoupled. No framework, no build step. Progress lives in localStorage.
+ * One engine, many courses. Pick a LANGUAGE, then a TOPIC, then a MODE: the
+ * app generates a practice session from the word/sentence lists in
+ * courses/<language>.js, so content and practice styles are fully decoupled.
+ * No framework, no build step. Progress lives in localStorage, one save per
+ * language, and syncs to this repo under a username if you want it to.
+ *
+ * Throughout, an item is { ta, tr, en }: `ta` is the text in the language
+ * you're learning (the field name is historical), `tr` its romanisation or
+ * pronunciation, `en` the English meaning.
  *
  * Modes:
  *   flash    — flashcards (flip to reveal), not scored
- *   choice   — multiple choice (Tamil⇄English)
+ *   choice   — multiple choice (target⇄English)
  *   match    — tap matching pairs
  *   type     — type the answer (script or transliteration accepted)
- *   listen   — hear Tamil, pick the meaning
+ *   listen   — hear the word, pick the meaning
  *   build    — tap word-tiles to build a sentence  (sentence topics)
- *   translate— read Tamil, choose the English      (sentence topics)
+ *   translate— read the sentence, choose the English (sentence topics)
  * ==========================================================================*/
 
 (function () {
   "use strict";
 
-  const TOPICS = window.TOPICS;
-  const VOCAB = window.VOCAB;
-  const SENTENCES = window.SENTENCES;
-  const ALPHABET = window.ALPHABET;
-  const CONJUGATION = window.CONJUGATION || [];
-  const KURAL = window.KURAL || [];
+  const KILI = window.KILI;
 
-  /* Cross-topic practice tracks — shown on the home screen as "things to
-   * practise" (as opposed to browsing a single topic). Each behaves like a
-   * pseudo-topic in the session runner: it has a colour, an id and a pool. */
-  const PRACTICE = [
-    { id: "prac-review", title: "Review", icon: "மீட்டல்", color: "#a85a44",
-      kind: "practice", pool: "review", desc: "Spaced repetition — your words that are due" },
-    { id: "prac-vocab", title: "Vocabulary", icon: "சொல்", color: "#4a5b8c",
-      kind: "practice", pool: "vocab", desc: "Mixed word practice from every topic" },
-    { id: "prac-sentence", title: "Sentences", icon: "வாக்கியம்", color: "#8c6d3f",
-      kind: "practice", pool: "sentence", desc: "Build and translate full sentences" },
-    { id: "prac-conjugation", title: "Conjugation", icon: "வினை", color: "#a85a44",
-      kind: "practice", pool: "conjugation", desc: "Verb tenses — past, present & future" },
-    { id: "prac-listening", title: "Listening", icon: "கேட்டல்", color: "#6b7f4e",
-      kind: "practice", pool: "listening", desc: "Ear training — words and sentences" },
-    { id: "prac-kural", title: "Thirukkural", icon: "திருக்குறள்", color: "#8c6d3f",
-      kind: "practice", pool: "kural", desc: "Classical couplets of Tiruvaḷḷuvar" },
-    { id: "prac-mixed", title: "Mixed review", icon: "கலவை", color: "#7a5470",
-      kind: "practice", pool: "mixed", desc: "A bit of everything you've seen" },
-  ];
+  /* --------------------- The course currently loaded ---------------------
+   * Everything below reads these; switchLanguage() swaps them wholesale and
+   * re-renders. They are only null before a language has been chosen. */
+  let LANG = null;          // entry from KILI.LANGUAGES
+  let COURSE = null;        // the registered course data
+  let TOPICS = [];          // topic spine, filtered to what this course has
+  let VOCAB = [];
+  let SENTENCES = [];
+  let ALPHABET = null;
+  let CONJUGATION = [];
+  let READING = null;       // optional reading collection (e.g. the Tirukkuṟaḷ)
+  let PRACTICE = [];
 
   const app = document.getElementById("app");
   const topbar = document.getElementById("topbar");
 
   /* ----------------------------- Persistence ----------------------------- */
-  const SAVE_KEY = "kili-tamil-v2";
+  const LANG_KEY = "kili-language";
+  let SAVE_KEY = "kili-tamil-v2";     // per-language; set by useCourse()
   const todayStr = () => new Date().toISOString().slice(0, 10);
   const addDays = (dateStr, n) => {
     const d = new Date(dateStr + "T00:00:00");
@@ -71,10 +66,84 @@
     } catch (e) { return defaultState(); }
   }
   function save() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {} }
-  let state = load();
+  let state = defaultState();
+
+  /* ---------------------------- Course binding ---------------------------
+   * Point the engine at one course. Topics are the shared spine filtered to
+   * what this course actually has, so a language without, say, an alphabet
+   * simply doesn't show that card. */
+  function useCourse(lang, course) {
+    LANG = lang; COURSE = course;
+    VOCAB = course.vocab || [];
+    SENTENCES = course.sentences || [];
+    CONJUGATION = course.conjugation || [];
+    ALPHABET = course.alphabet || null;
+    READING = course.reading || null;
+
+    const icons = course.icons || {};
+    const has = {};
+    VOCAB.forEach(v => { has[v.topic] = true; if (v.also) has[v.also] = true; });
+    TOPICS = KILI.TOPIC_DEFS.filter(t =>
+      t.kind === "alpha" ? !!ALPHABET
+      : t.kind === "sentence" ? SENTENCES.length > 0
+      : !!has[t.id]
+    ).map(t => Object.assign({}, t, {
+      icon: icons[t.id] || t.title,
+      title: t.kind === "alpha" && course.alphabetTitle ? course.alphabetTitle : t.title,
+    }));
+
+    const pi = course.practiceIcons || {};
+    PRACTICE = [
+      { id: "prac-review", title: "Review", icon: pi.review || "Review", color: "#a85a44",
+        kind: "practice", pool: "review", desc: "Spaced repetition — your words that are due" },
+      { id: "prac-vocab", title: "Vocabulary", icon: pi.vocab || "Words", color: "#4a5b8c",
+        kind: "practice", pool: "vocab", desc: "Mixed word practice from every topic" },
+      { id: "prac-sentence", title: "Sentences", icon: pi.sentence || "Sentences", color: "#8c6d3f",
+        kind: "practice", pool: "sentence", desc: "Build and translate full sentences" },
+      { id: "prac-conjugation", title: "Conjugation", icon: pi.conjugation || "Verbs", color: "#a85a44",
+        kind: "practice", pool: "conjugation", desc: "Verb tenses — past, present & future" },
+      { id: "prac-listening", title: "Listening", icon: pi.listening || "Listen", color: "#6b7f4e",
+        kind: "practice", pool: "listening", desc: "Ear training — words and sentences" },
+      { id: "prac-mixed", title: "Mixed review", icon: pi.mixed || "Mixed", color: "#7a5470",
+        kind: "practice", pool: "mixed", desc: "A bit of everything you've seen" },
+    ].filter(p => p.pool !== "conjugation" || CONJUGATION.length)
+     .filter(p => p.pool !== "sentence" || SENTENCES.length);
+    if (READING) {
+      PRACTICE.splice(PRACTICE.length - 1, 0, {
+        id: "prac-reading", title: READING.title, icon: pi.reading || READING.native || READING.title,
+        color: "#8c6d3f", kind: "practice", pool: "reading", desc: READING.desc,
+      });
+    }
+
+    // Tamil keeps its original key so progress saved before the app went
+    // multilingual is still found.
+    SAVE_KEY = lang.id === "tamil" ? "kili-tamil-v2" : "kili-" + lang.id + "-v2";
+    state = load();
+    // The interface is in English; individual words carry their own lang tag
+    // (see targetSpan) so screen readers and hyphenation get them right.
+    document.documentElement.lang = "en";
+    pickVoice();
+    setBrand();
+  }
+
+  /* Target-language text: written right-to-left for Arabic, and always in the
+   * course's own font. */
+  function tagTarget(n) {
+    n.classList.add("tgt");
+    if (!LANG) return n;
+    n.lang = LANG.speech;
+    if (LANG.dir === "rtl") n.dir = "rtl";
+    return n;
+  }
+  const targetSpan = (cls, text) => tagTarget(el("span", cls, text));
+  const targetDiv = (cls, text) => tagTarget(el("div", cls, text));
+  // "Tamil", "Spanish", … — used all over the interface copy.
+  const LN = () => (LANG ? LANG.name : "");
+  // What the middle line is called for this language.
+  const TRN = () => (LANG ? LANG.translit : "transliteration");
 
   /* ------------------------ Spaced repetition (SRS) ---------------------
-   * Each word (keyed by its Tamil + English) carries a memory record. A
+   * Each word (keyed by its own text + English) carries a memory record. A
    * correct answer lengthens the interval before it's due again; a wrong
    * answer resets it. The "Review" track pools whatever is due today. */
   const SRS_SEP = "␟";
@@ -146,21 +215,44 @@
    *
    * Devices merge rather than overwrite (see mergeState), so practising in two
    * places doesn't lose work. */
-  const SYNC = { owner: "AadhavSivakumar", repo: "Tamil", branch: "main", dir: "progress" };
-  const ACCT_KEY = "kili-tamil-account";
+  const SYNC = { owner: "AadhavSivakumar", repo: "Language", branch: "main", dir: "progress" };
+  const ACCT_KEY = "kili-account";
+
+  /* One save per language, both locally and inside the synced file. */
+  const keyFor = (id) => (id === "tamil" ? "kili-tamil-v2" : "kili-" + id + "-v2");
+  function readLang(id) {
+    try {
+      const raw = localStorage.getItem(keyFor(id));
+      return raw ? Object.assign(defaultState(), JSON.parse(raw)) : null;
+    } catch (e) { return null; }
+  }
+  function writeLang(id, st) {
+    try { localStorage.setItem(keyFor(id), JSON.stringify(st)); } catch (e) {}
+  }
+  // Everything this device knows about, with the live state for the language
+  // currently open (which may be ahead of what's in localStorage).
+  function allLocalStates() {
+    const out = {};
+    KILI.LANGUAGES.forEach(l => { const s = readLang(l.id); if (s) out[l.id] = s; });
+    if (LANG) out[LANG.id] = state;
+    return out;
+  }
   const cleanName = (s) => (s || "").toLowerCase().trim()
     .replace(/[^a-z0-9._-]/g, "-").replace(/^[-.]+|[-.]+$/g, "").slice(0, 32);
 
   function loadAcct() {
-    try { return Object.assign({ username: "", token: "", auto: true },
-      JSON.parse(localStorage.getItem(ACCT_KEY) || "{}")); }
+    try {
+      const raw = localStorage.getItem(ACCT_KEY) ||
+                  localStorage.getItem("kili-tamil-account") || "{}";   // pre-multilingual
+      return Object.assign({ username: "", token: "", auto: true }, JSON.parse(raw));
+    }
     catch (e) { return { username: "", token: "", auto: true }; }
   }
   function saveAcct() { try { localStorage.setItem(ACCT_KEY, JSON.stringify(acct)); } catch (e) {} }
   let acct = loadAcct();
   let sync = { busy: false, msg: "", kind: "" };   // kind: ok | bad | ""
 
-  // btoa/atob are byte-oriented; Tamil needs a UTF-8 round trip.
+  // btoa/atob are byte-oriented; non-Latin scripts need a UTF-8 round trip.
   function b64enc(str) {
     const bytes = new TextEncoder().encode(str);
     let bin = "";
@@ -183,29 +275,35 @@
     return h;
   }
 
-  /* Fetch the remote file. Returns { state, sha } — sha is null when the file
-   * doesn't exist yet (a first-time username), which is not an error. */
+  /* Fetch the remote file. Returns { languages, sha } — sha is null when the
+   * file doesn't exist yet (a first-time username), which is not an error.
+   * Files written before the app went multilingual hold a single `state`;
+   * those are read as the Tamil course. */
   async function pullRemote(username) {
     const res = await fetch(apiUrl(username) + "?ref=" + SYNC.branch + "&t=" + Date.now(),
       { headers: ghHeaders(), cache: "no-store" });
-    if (res.status === 404) return { state: null, sha: null };
+    if (res.status === 404) return { languages: null, sha: null };
     if (res.status === 403) throw new Error("GitHub rate limit reached — add a token, or retry in a few minutes.");
     if (!res.ok) throw new Error("Couldn't read progress (HTTP " + res.status + ").");
     const meta = await res.json();
     let payload;
     try { payload = JSON.parse(b64dec(meta.content)); }
     catch (e) { throw new Error("The saved file is corrupt and can't be read."); }
-    return { state: payload && payload.state ? payload.state : null, sha: meta.sha };
+    let languages = (payload && payload.languages) || null;
+    if (!languages && payload && payload.state) languages = { tamil: payload.state };
+    return { languages, sha: meta.sha };
   }
 
   async function pushRemote(username, sha) {
     if (!acct.token) throw new Error("Add a GitHub token to save from this device.");
+    const languages = allLocalStates();
+    const totalXp = Object.keys(languages).reduce((n, k) => n + (languages[k].xp || 0), 0);
     const payload = {
       username, updatedAt: new Date().toISOString(),
-      app: "kili-tamil", version: 2, state,
+      app: "kili", version: 3, languages,
     };
     const body = {
-      message: "progress: " + username + " · " + state.xp + " XP",
+      message: "progress: " + username + " · " + totalXp + " XP",
       content: b64enc(JSON.stringify(payload, null, 2)),
       branch: SYNC.branch,
     };
@@ -256,8 +354,19 @@
     if (sync.busy) return;
     sync.busy = true; sync.msg = "Syncing…"; sync.kind = ""; if (o.onchange) o.onchange();
     try {
-      const { state: remote, sha } = await pullRemote(username);
-      if (remote) { state = Object.assign(defaultState(), mergeState(remote, state)); save(); }
+      const { languages: remote, sha } = await pullRemote(username);
+      if (remote) {
+        // Merge every language the file knows about, not just the open one, so
+        // switching course later finds the progress already waiting.
+        Object.keys(remote).forEach(id => {
+          if (LANG && id === LANG.id) {
+            state = Object.assign(defaultState(), mergeState(remote[id], state));
+            save();
+          } else {
+            writeLang(id, Object.assign(defaultState(), mergeState(remote[id], readLang(id))));
+          }
+        });
+      }
       if (acct.token) {
         await pushRemote(username, sha);
         sync.msg = "Synced as " + username + " · just now"; sync.kind = "ok";
@@ -299,7 +408,11 @@
     return a;
   }
   function sample(arr, n) { return shuffle(arr).slice(0, n); }
-  const isTamil = (s) => /[஀-௿]/.test(s || "");
+  /* Is this string in the language being learned? For a language with its own
+   * script that's a script test; for the Latin-script courses the engine can't
+   * tell by looking, so generators mark the target side explicitly and this is
+   * only ever a fallback. */
+  const isTarget = (s) => (LANG && LANG.script) ? LANG.script.test(s || "") : true;
 
   /* --------------------------- Keyboard control --------------------------
    * The active view registers a handler in `onKey`; one global listener
@@ -375,21 +488,25 @@
     return h;
   }
 
-  /* -------------------------- Tamil text-to-speech ----------------------- */
+  /* ------------------------ Target-language speech ----------------------- */
   let taVoice = null;
   function pickVoice() {
-    if (!("speechSynthesis" in window)) return;
+    if (!("speechSynthesis" in window) || !LANG) return;
+    const base = LANG.speech.split("-")[0];
+    const exact = new RegExp("^" + LANG.speech.replace("-", "[-_]") + "$", "i");
+    const loose = new RegExp("^" + base + "([-_]|$)", "i");
     const voices = speechSynthesis.getVoices();
-    taVoice = voices.find(v => /^ta(-|_|$)/i.test(v.lang)) ||
-              voices.find(v => /tamil/i.test(v.name)) || null;
+    taVoice = voices.find(v => exact.test(v.lang)) ||
+              voices.find(v => loose.test(v.lang)) ||
+              voices.find(v => new RegExp(LANG.name, "i").test(v.name)) || null;
   }
-  if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+  if ("speechSynthesis" in window) { speechSynthesis.onvoiceschanged = pickVoice; }
   function speak(text) {
-    if (!("speechSynthesis" in window) || !text) return;
+    if (!("speechSynthesis" in window) || !text || !LANG) return;
     try {
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = "ta-IN";
+      u.lang = LANG.speech;
       if (taVoice) u.voice = taVoice;
       u.rate = 0.85;
       speechSynthesis.speak(u);
@@ -408,12 +525,108 @@
   }
 
   /* ------------------------------- Top bar ------------------------------- */
+  function setBrand() {
+    const mark = $("#brand-mark"), word = $("#brand-word");
+    if (mark) { mark.textContent = LANG.mark; mark.dir = LANG.dir === "rtl" ? "rtl" : "ltr"; }
+    if (word) word.textContent = "Learn " + LANG.name;
+    document.title = "Kili · Learn " + LANG.name;
+  }
   function renderTopbar() {
     topbar.hidden = false;
     $("#stat-streak").textContent = state.streak;
     $("#stat-xp").textContent = state.xp;
   }
-  $("#home-btn").addEventListener("click", renderHome);
+  $("#home-btn").addEventListener("click", () => { if (LANG) renderHome(); else renderPicker(); });
+
+  // An icon for a screen that isn't a topic, in the course's own script where
+  // the course supplies one.
+  const uiIcon = (id, fallback) =>
+    (COURSE && COURSE.ui && COURSE.ui[id]) ? COURSE.ui[id] : fallback;
+
+  /* =========================== LANGUAGE PICKER ===========================
+   * The first screen: which course do you want? Each card shows the language
+   * in its own script, plus whatever progress this device already has for it,
+   * so returning learners can see where they left off. */
+  function renderPicker(canCancel) {
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    app.innerHTML = ""; onKey = null;
+    topbar.hidden = !LANG;
+    if (LANG) renderTopbar();
+
+    const wrap = el("div", "home picker");
+
+    if (canCancel && LANG) {
+      const back = el("button", "back-btn", "← Back to " + LANG.name);
+      back.addEventListener("click", renderHome);
+      wrap.appendChild(back);
+    }
+
+    const hero = el("div", "hero picker-hero");
+    hero.appendChild(el("div", "hero-logo picker-logo", "🦜"));
+    const hg = el("div");
+    hg.appendChild(el("h1", "hero-title", "What would you like to learn?"));
+    hg.appendChild(el("p", "hero-sub",
+      "Eleven courses, one engine. Words, sentences and verb conjugation in each — " +
+      "with your own progress, streak and spaced-repetition memory kept separately per language."));
+    hero.appendChild(hg);
+    wrap.appendChild(hero);
+
+    const grid = el("div", "lang-grid");
+    KILI.LANGUAGES.forEach(lang => {
+      const saved = readLang(lang.id);
+      const card = el("button", "lang-card" + (LANG && LANG.id === lang.id ? " current" : ""));
+      card.type = "button";
+      card.appendChild(el("span", "lang-emoji", lang.emoji));
+      const txt = el("span", "lang-text");
+      txt.appendChild(el("span", "lang-name", lang.name));
+      const native = el("span", "lang-native", lang.native);
+      if (lang.dir === "rtl") native.dir = "rtl";
+      txt.appendChild(native);
+      txt.appendChild(el("span", "lang-note",
+        saved && saved.xp ? saved.xp + " XP · " + (saved.streak || 0) + "-day streak"
+                          : "Start from scratch"));
+      card.appendChild(txt);
+      card.addEventListener("click", () => switchLanguage(lang.id));
+      grid.appendChild(card);
+    });
+    wrap.appendChild(grid);
+
+    const foot = el("div", "home-footer");
+    foot.appendChild(el("p", "field-note",
+      "You can switch at any time — nothing is lost. Pronunciation uses your device's " +
+      "voices, so how much you hear depends on which ones it has installed."));
+    wrap.appendChild(foot);
+
+    app.appendChild(wrap);
+    window.scrollTo(0, 0);
+  }
+
+  /* Load a course (once) and hand the engine over to it. */
+  function switchLanguage(id) {
+    const lang = KILI.byId(id);
+    if (!lang) return renderPicker();
+    if (LANG && LANG.id === id) return renderHome();
+    app.innerHTML = "";
+    const loading = el("div", "home");
+    loading.appendChild(el("p", "loading-note", "Loading the " + lang.name + " course…"));
+    app.appendChild(loading);
+
+    KILI.load(lang).then(course => {
+      try { localStorage.setItem(LANG_KEY, id); } catch (e) {}
+      useCourse(lang, course);
+      renderHome();
+      // A signed-in learner may have progress in this language on another
+      // device; fetch it quietly and repaint if anything lands.
+      if (acct.username) syncNow({}).then(() => { if (app.querySelector(".home")) renderHome(); });
+    }).catch(err => {
+      loading.innerHTML = "";
+      loading.appendChild(el("p", "field-warn", err.message ||
+        ("Couldn't load the " + lang.name + " course.")));
+      const back = el("button", "btn btn-ghost", "Choose another language");
+      back.addEventListener("click", () => renderPicker(false));
+      loading.appendChild(back);
+    });
+  }
 
   /* --------------------------- Content helpers --------------------------- */
   function topicVocab(topicId) {
@@ -451,7 +664,7 @@
   function vocabPoolFor(topic) {
     if (topic.kind === "practice") {
       if (topic.pool === "conjugation") return conjugationForms();
-      if (topic.pool === "kural") return KURAL;
+      if (topic.pool === "reading") return READING ? READING.items : [];
       if (topic.pool === "review") return dueItems();
       if (topic.pool === "custom") return topic.items || [];
       // "mixed" and "listening" draw on everything that has ta/tr/en.
@@ -470,7 +683,8 @@
       if (topic.pool === "sentence") return SENTENCES.length + " sentences";
       if (topic.pool === "conjugation")
         return CONJUGATION.length + " verbs · " + conjugationForms().length + " forms";
-      if (topic.pool === "kural") return KURAL.length + " couplets";
+      if (topic.pool === "reading")
+        return READING ? READING.items.length + " " + (READING.unit || "texts") : "";
       if (topic.pool === "review") { const d = dueCount(); return d ? d + " due" : "all caught up"; }
       if (topic.pool === "custom") return (topic.items || []).length + " words";
       if (topic.pool === "mixed" || topic.pool === "listening")
@@ -486,7 +700,7 @@
       if (topic.pool === "sentence")
         return ["translate", "en2ta", "smatch", "build", "stype", "slisten", "flash"];
       if (topic.pool === "conjugation") return ["conjugate", "type", "flash"];
-      if (topic.pool === "kural") return ["kread", "translate", "kline", "smatch", "flash"];
+      if (topic.pool === "reading") return ["kread", "translate", "kline", "smatch", "flash"];
       if (topic.pool === "listening") return ["listen", "slisten", "flash"];
       if (topic.pool === "review" || topic.pool === "custom")
         return ["choice", "type", "listen", "speak", "flash"];
@@ -499,23 +713,26 @@
     if (topicSentences(topic.id).length >= 2) m.push("build");
     return m;
   }
-  const MODE_META = {
-    flash:     { title: "Flashcards",   desc: "Flip through and learn — no pressure" },
-    choice:    { title: "Multiple choice", desc: "Pick the right meaning" },
-    match:     { title: "Matching",     desc: "Tap the matching pairs" },
-    type:      { title: "Type it",      desc: "Type the answer yourself" },
-    listen:    { title: "Listening",    desc: "Hear it, choose the meaning" },
-    speak:     { title: "Speak it",     desc: "Say it aloud — your mic checks you" },
-    build:     { title: "Build a sentence", desc: "Tap word tiles in order" },
-    translate: { title: "Tamil → English", desc: "Read Tamil, choose the meaning" },
-    en2ta:     { title: "English → Tamil", desc: "Read English, choose the Tamil" },
-    smatch:    { title: "Match sentences", desc: "Pair each Tamil with its English" },
-    conjugate: { title: "Conjugation quiz", desc: "Choose the correct verb form" },
-    stype:     { title: "Type the sentence", desc: "Write the whole sentence in Tamil" },
-    slisten:   { title: "Sentence listening", desc: "Hear a sentence, choose the meaning" },
-    kread:     { title: "Read the kural", desc: "Browse the couplets with meanings" },
-    kline:     { title: "Complete the couplet", desc: "Given line one, pick line two" },
-  };
+  function modeMeta(mode) {
+    const L = LN(), reading = READING || {};
+    return ({
+      flash:     { title: "Flashcards",   desc: "Flip through and learn — no pressure" },
+      choice:    { title: "Multiple choice", desc: "Pick the right meaning" },
+      match:     { title: "Matching",     desc: "Tap the matching pairs" },
+      type:      { title: "Type it",      desc: "Type the answer yourself" },
+      listen:    { title: "Listening",    desc: "Hear it, choose the meaning" },
+      speak:     { title: "Speak it",     desc: "Say it aloud — your mic checks you" },
+      build:     { title: "Build a sentence", desc: "Tap word tiles in order" },
+      translate: { title: L + " → English", desc: "Read " + L + ", choose the meaning" },
+      en2ta:     { title: "English → " + L, desc: "Read English, choose the " + L },
+      smatch:    { title: "Match sentences", desc: "Pair each " + L + " line with its English" },
+      conjugate: { title: "Conjugation quiz", desc: "Choose the correct verb form" },
+      stype:     { title: "Type the sentence", desc: "Write the whole sentence in " + L },
+      slisten:   { title: "Sentence listening", desc: "Hear a sentence, choose the meaning" },
+      kread:     { title: "Read", desc: "Browse " + (reading.unit || "the texts") + " with meanings" },
+      kline:     { title: "Complete the couplet", desc: "Given line one, pick line two" },
+    })[mode];
+  }
 
   /* ============================== HOME VIEW ============================== */
   function renderHome() {
@@ -525,10 +742,10 @@
     const wrap = el("div", "home");
 
     const hero = el("div", "hero");
-    hero.appendChild(el("div", "hero-logo", "கிளி"));
+    hero.appendChild(targetDiv("hero-logo", LANG.mark));
     const hg = el("div");
-    hg.appendChild(el("h1", "hero-title", "Learn Tamil"));
-    hg.appendChild(el("p", "hero-sub", "The alphabet, 1,300 words across 24 topics, sentences, verb conjugation and the Tirukkuṟaḷ — practise however suits you."));
+    hg.appendChild(el("h1", "hero-title", "Learn " + LANG.name));
+    hg.appendChild(el("p", "hero-sub", LANG.blurb + " Practise however suits you."));
     hero.appendChild(hg);
     wrap.appendChild(hero);
 
@@ -542,7 +759,12 @@
     const acctBtn = el("button", "nav-btn", acct.username ? acct.username : "Sign in");
     acctBtn.type = "button";
     acctBtn.addEventListener("click", renderAccount);
-    nav.appendChild(browseBtn); nav.appendChild(progBtn); nav.appendChild(acctBtn);
+    const langBtn = el("button", "nav-btn", LANG.emoji + " " + LANG.name);
+    langBtn.type = "button";
+    langBtn.title = "Switch language";
+    langBtn.addEventListener("click", () => renderPicker(true));
+    nav.appendChild(browseBtn); nav.appendChild(progBtn);
+    nav.appendChild(acctBtn); nav.appendChild(langBtn);
     wrap.appendChild(nav);
 
     const makeCard = (topic, subText) => {
@@ -580,7 +802,8 @@
     const footer = el("div", "home-footer");
     const reset = el("button", "link-btn", "Reset progress");
     reset.addEventListener("click", () => {
-      if (confirm("Reset your XP and streak?")) { state = defaultState(); save(); renderHome(); }
+      if (confirm("Reset your " + LANG.name + " XP and streak? Your other languages are untouched."))
+        { state = defaultState(); save(); renderHome(); }
     });
     footer.appendChild(reset);
     wrap.appendChild(footer);
@@ -600,11 +823,11 @@
     wrap.appendChild(back);
 
     const head = el("div", "topic-head");
-    head.appendChild(el("span", "topic-head-icon", "கணக்கு"));
+    head.appendChild(targetSpan("topic-head-icon", uiIcon("account", "Account")));
     const ht = el("div");
     ht.appendChild(el("h1", "topic-head-title", "Account & sync"));
     ht.appendChild(el("p", "topic-head-sub",
-      "Your progress is saved to this repo as progress/<username>.json"));
+      "Every language you study is saved to this repo as progress/<username>.json"));
     head.appendChild(ht);
     wrap.appendChild(head);
 
@@ -719,9 +942,9 @@
     wrap.appendChild(back);
 
     const head = el("div", "topic-head");
-    head.appendChild(el("span", "topic-head-icon", "முன்னேற்றம்"));
+    head.appendChild(targetSpan("topic-head-icon", uiIcon("progress", "Progress")));
     const ht = el("div");
-    ht.appendChild(el("h1", "topic-head-title", "My progress"));
+    ht.appendChild(el("h1", "topic-head-title", "My " + LANG.name + " progress"));
     ht.appendChild(el("p", "topic-head-sub",
       state.xp + " XP · " + totalLearned() + " words learned · " + dueCount() + " due"));
     head.appendChild(ht);
@@ -803,17 +1026,19 @@
     wrap.appendChild(back);
 
     const head = el("div", "topic-head");
-    head.appendChild(el("span", "topic-head-icon", "தேடல்"));
+    head.appendChild(targetSpan("topic-head-icon", uiIcon("search", "Search")));
     const ht = el("div");
     ht.appendChild(el("h1", "topic-head-title", "Search words"));
-    ht.appendChild(el("p", "topic-head-sub", VOCAB.length + " words across every topic"));
+    ht.appendChild(el("p", "topic-head-sub",
+      VOCAB.length + " " + LANG.name + " words across every topic"));
     head.appendChild(ht);
     wrap.appendChild(head);
 
     const titleOf = {}; TOPICS.forEach(t => titleOf[t.id] = t.title);
 
     const input = el("input", "browse-search");
-    input.type = "search"; input.placeholder = "Search English, Tamil or transliteration…";
+    input.type = "search";
+    input.placeholder = "Search English, " + LN() + " or " + TRN() + "…";
     input.autocapitalize = "off"; input.autocomplete = "off"; input.spellcheck = false;
     wrap.appendChild(input);
 
@@ -829,7 +1054,7 @@
     practiseBtn.addEventListener("click", () => {
       const items = practiseBtn._pool || [];
       if (items.length < 4) return;
-      renderTopic({ id: "prac-custom", title: "Search results", icon: "தேடல்",
+      renderTopic({ id: "prac-custom", title: "Search results", icon: uiIcon("search", "Search"),
         color: "#4a5b8c", kind: "practice", pool: "custom", items });
     });
     foot.appendChild(practiseBtn);
@@ -851,7 +1076,7 @@
         const row = el("div", "browse-row");
         const main = el("div", "browse-main");
         const taLine = el("div", "browse-ta");
-        taLine.appendChild(el("span", "browse-ta-text", v.ta));
+        taLine.appendChild(targetSpan("browse-ta-text", v.ta));
         taLine.appendChild(speaker(v.ta));
         main.appendChild(taLine);
         main.appendChild(el("div", "browse-sub", v.tr + " · " + v.en));
@@ -925,7 +1150,7 @@
     wrap.appendChild(el("h2", "section-title", "How do you want to practise?"));
     const list = el("div", "mode-list");
     modesFor(topic).forEach(mode => {
-      const meta = MODE_META[mode];
+      const meta = modeMeta(mode);
       const b = el("button", "mode-card");
       b.type = "button";
       const mt = el("div", "mode-text");
@@ -963,13 +1188,15 @@
       if (ta2en) {
         const choices = shuffle([item.en].concat(distractorsEn(pool, item.en, 3)));
         return { type: "select", prompt: item.ta, promptSub: item.tr, key: wkey(item),
+                 promptTarget: true,
                  ask: "What does this mean?", choices, answer: item.en };
       } else {
         const others = distractorsTa(pool, item.ta, 3);
         const choices = shuffle([item].concat(others));
         const subFor = {}; choices.forEach(c => subFor[c.ta] = c.tr);
         return { type: "select", prompt: item.en, promptSub: "", key: wkey(item),
-                 ask: "How do you say this in Tamil?",
+                 choicesTarget: true,
+                 ask: "How do you say this in " + LN() + "?",
                  choices: choices.map(c => c.ta), answer: item.ta, subFor };
       }
     });
@@ -982,11 +1209,11 @@
     for (let i = 0; i < items.length && boards.length < 3; i += n) {
       const group = items.slice(i, i + n);
       if (group.length < 3) break;
-      boards.push({ type: "match", title: "Match Tamil to English",
+      boards.push({ type: "match", title: "Match " + LN() + " to English",
         keys: group.map(wkey),
         pairs: group.map(x => ({ ta: x.ta, tr: x.tr, en: x.en })) });
     }
-    return boards.length ? boards : [{ type: "match", title: "Match Tamil to English",
+    return boards.length ? boards : [{ type: "match", title: "Match " + LN() + " to English",
       pairs: items.slice(0, 4).map(x => ({ ta: x.ta, tr: x.tr, en: x.en })) }];
   }
 
@@ -997,10 +1224,11 @@
       if (ta2en) {
         const accept = item.en.split(/[\/,]/).map(s => s.trim()).filter(Boolean);
         return { type: "type", prompt: item.ta, promptSub: item.tr, key: wkey(item),
+                 promptTarget: true,
                  ask: "Type the meaning in English", accept };
       } else {
         return { type: "type", prompt: item.en, promptSub: "", key: wkey(item),
-                 ask: "Type it in Tamil (transliteration is fine)",
+                 ask: "Type it in " + LN() + " (" + TRN() + " is fine)",
                  accept: [item.ta, item.tr, fold(item.tr)] };
       }
     });
@@ -1047,11 +1275,12 @@
     return items.map(s => {
       const others = shuffle(sentences.filter(x => x.en !== s.en)).slice(0, 3).map(x => x.en);
       return { type: "select", prompt: s.ta, promptSub: s.tr, key: wkey(s),
+               promptTarget: true,
                ask: "What does this mean?", choices: shuffle([s.en].concat(others)), answer: s.en };
     });
   }
 
-  // English → Tamil: read the English sentence, choose the correct Tamil one.
+  // English → target: read the English sentence, choose the right one back.
   function genEn2Ta(sentences) {
     const items = sample(sentences, Math.min(MAX_Q, sentences.length));
     return items.map(s => {
@@ -1059,24 +1288,25 @@
       const all = [s].concat(others);
       const subFor = {}; all.forEach(x => subFor[x.ta] = x.tr);
       return { type: "select", prompt: s.en, promptSub: "", key: wkey(s),
-               ask: "Choose the Tamil sentence:", choices: all.map(x => x.ta),
+               choicesTarget: true,
+               ask: "Choose the " + LN() + " sentence:", choices: all.map(x => x.ta),
                answer: s.ta, subFor };
     });
   }
 
-  // Type the whole sentence in Tamil (script or transliteration both accepted).
+  // Type the whole sentence out (script or transliteration both accepted).
   function genSentenceType(sentences) {
     const items = sample(sentences, Math.min(MAX_Q, sentences.length));
     return items.map(s => ({
       type: "type", prompt: s.en, promptSub: "", key: wkey(s),
-      ask: "Type this sentence in Tamil (transliteration is fine)",
+      ask: "Type this sentence in " + LN() + " (" + TRN() + " is fine)",
       accept: [s.ta, s.tr, fold(s.tr)],
     }));
   }
 
   // Complete the couplet: show line one, choose the correct second line.
-  function genKuralLine(kurals) {
-    const usable = kurals.filter(k => k.l1 && k.l2);
+  function genReadingLine(texts) {
+    const usable = texts.filter(k => k.l1 && k.l2);
     if (usable.length < 4) return [];
     const items = sample(usable, Math.min(MAX_Q, usable.length));
     return items.map(k => {
@@ -1084,7 +1314,8 @@
       const all = [k].concat(others);
       const subFor = {}; all.forEach(x => subFor[x.l2] = x.tr2);
       return { type: "select", prompt: k.l1, promptSub: k.tr1,
-               ask: "Which line completes this kural?",
+               promptTarget: true, choicesTarget: true,
+               ask: (READING && READING.lineQuestion) || "Which line completes this?",
                choices: all.map(x => x.l2), answer: k.l2, subFor };
     });
   }
@@ -1102,7 +1333,8 @@
       const others = shuffle(t.forms.filter(f => f.ta !== form.ta)).slice(0, 3);
       const subFor = {}; [form].concat(others).forEach(f => subFor[f.ta] = f.tr);
       items.push({ type: "select", prompt: form.en, promptSub: "(to " + t.en + ")",
-                   ask: "Say this in Tamil:", key: wkey(form),
+                   choicesTarget: true,
+                   ask: "Say this in " + LN() + ":", key: wkey(form),
                    choices: shuffle([form.ta].concat(others.map(f => f.ta))),
                    answer: form.ta, subFor });
     }
@@ -1111,13 +1343,21 @@
   function genConjugateType(forms) {
     const items = sample(forms, Math.min(MAX_Q, forms.length));
     return items.map(f => ({ type: "type", prompt: f.en, promptSub: "", key: wkey(f),
-      ask: "Type it in Tamil (transliteration is fine)", accept: [f.ta, f.tr, fold(f.tr)] }));
+      ask: "Type it in " + LN() + " (" + TRN() + " is fine)", accept: [f.ta, f.tr, fold(f.tr)] }));
   }
 
-  // strip diacritics so typed plain-ASCII transliteration is accepted
+  /* Strip diacritics so a plain-ASCII spelling is accepted when typing —
+   * "nanri" for "naṉṟi", "manana" for "mañana", "schon" for "schön". The
+   * language's own rules run first (ß→ss, ü→ue, ḻ→zh …), then the generic
+   * accent strip catches the rest. */
   function fold(s) {
-    return (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "")
-      .replace(/[ṭṇṟḷḻṅñ]/gi, m => ({ "ṭ":"t","ṇ":"n","ṟ":"r","ḷ":"l","ḻ":"zh","ṅ":"ng","ñ":"ny" }[m.toLowerCase()] || m));
+    let out = (s || "");
+    const map = (LANG && LANG.fold) || null;
+    if (map) out = out.replace(/./g, ch => {
+      const lower = ch.toLowerCase();
+      return Object.prototype.hasOwnProperty.call(map, lower) ? map[lower] : ch;
+    });
+    return out.normalize("NFD").replace(/[̀-ͯ]/g, "");
   }
 
   /* ============================ SESSION RUNNER ========================== */
@@ -1125,7 +1365,7 @@
     state.practiced[topic.id] = true; save();
 
     if (mode === "flash") return startFlashcards(topic, level);
-    if (mode === "kread") return renderKuralReader(topic);
+    if (mode === "kread") return renderReader(topic);
 
     const vpool = applyLevel(vocabPoolFor(topic), level);
     const spool = applyLevel(sentencePoolFor(topic), level);
@@ -1136,12 +1376,12 @@
     else if (mode === "listen")    queue = genListen(vpool);
     else if (mode === "speak")     queue = genSpeak(vpool);
     else if (mode === "build")     queue = genBuild(spool);
-    else if (mode === "translate") queue = genTranslate(topic.pool === "kural" ? vpool : spool);
+    else if (mode === "translate") queue = genTranslate(topic.pool === "reading" ? vpool : spool);
     else if (mode === "en2ta")     queue = genEn2Ta(spool);
-    else if (mode === "smatch")    queue = genMatch(topic.pool === "kural" ? vpool : spool, topic.pool === "kural" ? 3 : 4);
+    else if (mode === "smatch")    queue = genMatch(topic.pool === "reading" ? vpool : spool, topic.pool === "reading" ? 3 : 4);
     else if (mode === "stype")     queue = genSentenceType(spool);
     else if (mode === "slisten")   queue = genListen(topic.pool === "listening" ? vpool : spool);
-    else if (mode === "kline")     queue = genKuralLine(KURAL);
+    else if (mode === "kline")     queue = genReadingLine(READING ? READING.items : []);
     else if (mode === "conjugate") queue = genConjugate(CONJUGATION);
 
     if (!queue.length) { alert("Not enough content for this mode yet."); return; }
@@ -1232,23 +1472,27 @@
     lessonChrome(session, (body) => {
       body.appendChild(el("h2", "ex-title", ex.ask || "Choose the correct answer"));
 
+      const promptIsTarget = ex.promptTarget != null ? ex.promptTarget : isTarget(ex.prompt);
       const prompt = el("div", "prompt-card");
       const pmain = el("div", "prompt-main");
-      pmain.appendChild(el("span", "prompt-text", ex.prompt));
-      if (isTamil(ex.prompt)) pmain.appendChild(speaker(ex.prompt));
+      pmain.appendChild(promptIsTarget ? targetSpan("prompt-text", ex.prompt)
+                                       : el("span", "prompt-text", ex.prompt));
+      if (promptIsTarget) pmain.appendChild(speaker(ex.prompt));
       prompt.appendChild(pmain);
       if (ex.promptSub) prompt.appendChild(el("div", "prompt-sub", ex.promptSub));
       body.appendChild(prompt);
-      if (isTamil(ex.prompt)) speak(ex.prompt);
+      if (promptIsTarget) speak(ex.prompt);
 
       let selected = null;
+      const choicesAreTarget = ex.choicesTarget != null ? ex.choicesTarget : false;
       const grid = el("div", "choices");
       shuffle(ex.choices).forEach((choice, i) => {
         const c = el("button", "choice");
         c.type = "button";
         c.appendChild(el("span", "choice-num", String(i + 1)));
-        c.appendChild(el("span", "choice-text", choice));
-        if (isTamil(choice)) {
+        c.appendChild(choicesAreTarget ? targetSpan("choice-text", choice)
+                                       : el("span", "choice-text", choice));
+        if (choicesAreTarget) {
           if (ex.subFor && ex.subFor[choice]) c.appendChild(el("span", "choice-sub", ex.subFor[choice]));
           c.appendChild(speaker(choice));
         }
@@ -1317,7 +1561,7 @@
       left.forEach(p => {
         const b = el("button", "match-tile");
         b.type = "button";
-        b.appendChild(el("span", "match-ta", p.ta));
+        b.appendChild(targetSpan("match-ta", p.ta));
         if (p.tr) b.appendChild(el("span", "match-tr", p.tr));
         b.addEventListener("click", () => {
           if (b.disabled) return;
@@ -1340,7 +1584,7 @@
       body.appendChild(board);
 
       const foot = el("div", "check-foot");
-      foot.appendChild(el("div", "hint", "Tap a Tamil word, then its English match."));
+      foot.appendChild(el("div", "hint", "Tap a " + LN() + " word, then its English match."));
       body.appendChild(foot);
       body.appendChild(keyHint("↑↓=move|←→=switch column|↵=select|esc=quit"));
 
@@ -1386,7 +1630,7 @@
       function makeToken(t) {
         const b = el("button", "token");
         b.type = "button";
-        b.appendChild(el("span", "token-ta", t));
+        b.appendChild(targetSpan("token-ta", t));
         if (trOf(t)) b.appendChild(el("span", "token-tr", trOf(t)));
         return b;
       }
@@ -1402,7 +1646,7 @@
             if (pos >= 0) chosen.splice(pos, 1);
             chip.remove(); b.classList.remove("used"); btn.disabled = chosen.length === 0;
           });
-          if (isTamil(t)) speak(t);
+          speak(t);
           answerRow.appendChild(chip); btn.disabled = chosen.length === 0;
         });
         bank.appendChild(b);
@@ -1448,14 +1692,16 @@
   function renderType(session, ex) {
     lessonChrome(session, (body) => {
       body.appendChild(el("h2", "ex-title", ex.ask || "Type the answer"));
+      const promptIsTarget = ex.promptTarget != null ? ex.promptTarget : isTarget(ex.prompt);
       const prompt = el("div", "prompt-card");
       const pmain = el("div", "prompt-main");
-      pmain.appendChild(el("span", "prompt-text", ex.prompt));
-      if (isTamil(ex.prompt)) pmain.appendChild(speaker(ex.prompt));
+      pmain.appendChild(promptIsTarget ? targetSpan("prompt-text", ex.prompt)
+                                       : el("span", "prompt-text", ex.prompt));
+      if (promptIsTarget) pmain.appendChild(speaker(ex.prompt));
       prompt.appendChild(pmain);
       if (ex.promptSub) prompt.appendChild(el("div", "prompt-sub", ex.promptSub));
       body.appendChild(prompt);
-      if (isTamil(ex.prompt)) speak(ex.prompt);
+      if (promptIsTarget) speak(ex.prompt);
 
       const input = el("input", "type-input");
       input.type = "text"; input.autocapitalize = "off"; input.autocomplete = "off";
@@ -1493,7 +1739,8 @@
       body.appendChild(el("h2", "ex-title", "What did you hear?"));
       if (!("speechSynthesis" in window) || !taVoice) {
         body.appendChild(el("p", "hint",
-          "Note: no Tamil voice found on this device, so the transliteration is shown to help."));
+          "Note: no " + LN() + " voice found on this device, so the " + TRN() +
+          " is shown to help."));
       }
       const big = el("div", "listen-card");
       const play = el("button", "listen-play");
@@ -1505,7 +1752,8 @@
       play.type = "button";
       play.addEventListener("click", () => speak(ex.audio));
       big.appendChild(play);
-      // If there's no Tamil voice, reveal transliteration so the mode still works.
+      // Without a voice for the language, reveal the pronunciation line so the
+      // mode still works.
       if (!taVoice) big.appendChild(el("div", "listen-tr", ex.tr));
       body.appendChild(big);
       speak(ex.audio);
@@ -1553,12 +1801,12 @@
   }
 
   /* ------------------------------- SPEAK ---------------------------------
-   * Uses the Web Speech API (ta-IN) to hear you say the word. Where speech
+   * Uses the Web Speech API in the course's locale to hear you say the word. Where speech
    * recognition isn't available, it falls back to an honest self-check. */
   function speechRecog() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return null;
-    try { const r = new SR(); r.lang = "ta-IN"; r.interimResults = false; r.maxAlternatives = 5; return r; }
+    try { const r = new SR(); r.lang = LANG.speech; r.interimResults = false; r.maxAlternatives = 5; return r; }
     catch (e) { return null; }
   }
   function speechMatches(alts, ex) {
@@ -1578,10 +1826,10 @@
   }
   function renderSpeak(session, ex) {
     lessonChrome(session, (body) => {
-      body.appendChild(el("h2", "ex-title", "Say it in Tamil"));
+      body.appendChild(el("h2", "ex-title", "Say it in " + LN()));
       const prompt = el("div", "prompt-card");
       const pmain = el("div", "prompt-main");
-      pmain.appendChild(el("span", "prompt-text", ex.ta));
+      pmain.appendChild(targetSpan("prompt-text", ex.ta));
       pmain.appendChild(speaker(ex.ta));
       prompt.appendChild(pmain);
       prompt.appendChild(el("div", "prompt-sub", ex.tr + " · " + ex.en));
@@ -1668,10 +1916,12 @@
     });
   }
 
-  /* --------------------------- KURAL READER ------------------------------
-   * Not a scored exercise — a quiet reading view. Each couplet is shown on
-   * its two metrical lines with transliteration, meaning and a speak button. */
-  function renderKuralReader(topic) {
+  /* ----------------------------- READER ----------------------------------
+   * Not a scored exercise — a quiet reading view for a course's literary
+   * collection (the Tirukkuṟaḷ in Tamil, proverbs elsewhere). Each text is
+   * shown on its two lines with pronunciation, meaning and a speak button. */
+  function renderReader(topic) {
+    const R = READING || { items: [], native: "", blurb: "", numLabel: "" };
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "lesson kural-reader");
@@ -1682,23 +1932,23 @@
     quit.setAttribute("aria-label", "Back");
     quit.addEventListener("click", () => renderTopic(topic));
     head.appendChild(quit);
-    head.appendChild(el("div", "kural-head-title", "திருக்குறள்"));
+    head.appendChild(targetDiv("kural-head-title", R.native || R.title || ""));
     wrap.appendChild(head);
 
     const body = el("div", "lesson-body");
-    body.appendChild(el("p", "hint",
-      "Couplets from the Tirukkuṟaḷ of Tiruvaḷḷuvar, with the standard numbering."));
+    if (R.blurb) body.appendChild(el("p", "hint", R.blurb));
 
-    KURAL.forEach(k => {
+    R.items.forEach(k => {
       const card = el("div", "kural-card");
       const top = el("div", "kural-top");
-      top.appendChild(el("span", "kural-num", "குறள் " + k.n));
-      top.appendChild(el("span", "kural-chapter", k.chapter + " · " + k.chapterEn));
+      top.appendChild(el("span", "kural-num", (R.numLabel || "#") + " " + k.n));
+      top.appendChild(el("span", "kural-chapter",
+        k.chapter ? k.chapter + " · " + k.chapterEn : (k.chapterEn || "")));
       card.appendChild(top);
 
       const lines = el("div", "kural-lines");
-      lines.appendChild(el("div", "kural-line", k.l1));
-      lines.appendChild(el("div", "kural-line", k.l2));
+      lines.appendChild(targetDiv("kural-line", k.l1));
+      lines.appendChild(targetDiv("kural-line", k.l2));
       card.appendChild(lines);
       card.appendChild(speaker(k.ta));
 
@@ -1725,7 +1975,7 @@
     if (topic.kind === "practice") {
       items = topic.pool === "sentence" ? SENTENCES
             : topic.pool === "conjugation" ? conjugationForms()
-            : topic.pool === "kural" ? KURAL
+            : topic.pool === "reading" ? (READING ? READING.items : [])
             : topic.pool === "review" ? dueItems()
             : topic.pool === "custom" ? (topic.items || [])
             : (topic.pool === "mixed" || topic.pool === "listening")
@@ -1759,7 +2009,7 @@
       const cardEl = el("div", "flashcard" + (flipped ? " flipped" : ""));
       const front = el("div", "flash-face flash-front");
       const ftop = el("div", "flash-ta");
-      ftop.appendChild(el("span", "ta-big", card.ta));
+      ftop.appendChild(targetSpan("ta-big", card.ta));
       ftop.appendChild(speaker(card.ta));
       front.appendChild(ftop);
       front.appendChild(el("div", "flash-tap", "tap to flip"));
@@ -1863,11 +2113,11 @@
     window.scrollTo(0, 0);
   }
 
-  /* ------------------------------- Start --------------------------------- */
-  renderHome();
-  // If a username is already set, quietly pull the latest from the repo and
-  // re-render once it lands. Failures are shown on the Account screen only.
-  if (acct.username) {
-    syncNow({}).then(() => { if (app.querySelector(".home")) renderHome(); });
-  }
+  /* ------------------------------- Start ---------------------------------
+   * Straight back into the last course you were studying; the picker only
+   * fronts the app on a first visit (or if that course has gone away). */
+  let last = null;
+  try { last = localStorage.getItem(LANG_KEY); } catch (e) {}
+  if (last && KILI.byId(last)) switchLanguage(last);
+  else renderPicker(false);
 })();

@@ -22,7 +22,9 @@
 
   --ui: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --display: "Fraunces", Georgia, "Times New Roman", serif;
-  --tamil: "Noto Serif Tamil", "Latha", "Nirmala UI", serif;
+  /* The script of the language being learned. languages.js overwrites this
+     with the course's own web font when a language is chosen. */
+  --target-font: "Fraunces", Georgia, serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -52,10 +54,13 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 button { font-family: inherit; cursor: pointer; color: inherit; }
-:lang(ta), .ta-big, .prompt-text, .match-ta, .token-ta, .choice-text,
-.topic-icon, .kural-line, .listen-tr, .hero-logo, .home-btn .mark {
-  font-family: var(--tamil);
+/* Anything written in the language being learned: the engine tags it .tgt. */
+.tgt, .topic-icon, .topic-head-icon, .listen-tr, .hero-logo, .home-btn .mark,
+.kural-head-title, .lang-native {
+  font-family: var(--target-font);
 }
+/* Right-to-left courses (Arabic): the target text flips, the interface doesn't. */
+[dir="rtl"] { text-align: right; }
 
 /* --------------------------------- Topbar -------------------------------- */
 .topbar {
@@ -154,7 +159,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   padding: 0 0 20px; margin-bottom: 4px;
   border-bottom: 2px solid var(--tc);
 }
-.topic-head-icon { font-family: var(--tamil); font-size: 22px; color: var(--tc); }
+.topic-head-icon { font-family: var(--target-font); font-size: 22px; color: var(--tc); }
 .topic-head-title {
   margin: 0; font-family: var(--display); font-size: 28px; font-weight: 600;
   letter-spacing: -.015em;
@@ -298,7 +303,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .type-input {
   width: 100%;
   border: none; border-bottom: 1px solid var(--rule); border-radius: 0;
-  padding: 12px 2px; font-size: 22px; font-family: var(--tamil);
+  padding: 12px 2px; font-size: 22px; font-family: var(--target-font);
   background: none; color: var(--ink);
 }
 .type-input:focus { outline: none; border-bottom-color: var(--accent); }
@@ -402,7 +407,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .listen-tr { font-size: 20px; font-style: italic; color: var(--muted); }
 
 /* ----------------------------- Kural reader ----------------------------- */
-.kural-head-title { font-family: var(--tamil); font-size: 17px; color: var(--accent); }
+.kural-head-title { font-family: var(--target-font); font-size: 17px; color: var(--accent); }
 .kural-card {
   background: none;
   border: none; border-bottom: 1px solid var(--line);
@@ -611,7 +616,7 @@ kbd {
 }
 .browse-main { min-width: 0; }
 .browse-ta { display: flex; align-items: center; gap: 10px; }
-.browse-ta-text { font-family: var(--tamil); font-size: 20px; font-weight: 500; }
+.browse-ta-text { font-family: var(--target-font); font-size: 20px; font-weight: 500; }
 .browse-sub { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 2px; }
 .browse-topic {
   font-size: 11px; color: var(--muted); border: 1px solid var(--line);

@@ -1,46 +1,12 @@
-/*
- * Tamil course content — data only.
+/* ============================================================================
+ * Tamil course — data only.
  *
- * The app GENERATES exercises from these lists, so to add material you just
- * add words or sentences here; every practice mode picks them up automatically.
- *
- *   TOPICS   — the categories shown on the home screen.
- *   VOCAB    — { ta, tr, en, topic } single words / short phrases.
- *   SENTENCES— { ta, tr, en, topic, words:[{ta,tr}] } for translation & building.
- *   ALPHABET — the letters, exposed to the engine as vocab-like items.
- *
- * tr = transliteration (light scholarly scheme: ā ī ū ḷ ṇ ṟ ṭ ḻ ṅ ñ …).
- */
-
-/* ------------------------------- Topics -------------------------------- */
-const TOPICS = [
-  { id: "alphabet", title: "Alphabet", icon: "எழுத்து", color: "#8c6d3f", kind: "alpha" },
-  { id: "greetings", title: "Greetings", icon: "வணக்கம்", color: "#4a5b8c", kind: "vocab" },
-  { id: "numbers", title: "Numbers", icon: "எண்", color: "#7a5470", kind: "vocab" },
-  { id: "colors", title: "Colours", icon: "நிறம்", color: "#7a5470", kind: "vocab" },
-  { id: "family", title: "Family", icon: "குடும்பம்", color: "#a85a44", kind: "vocab" },
-  { id: "people", title: "People", icon: "மனிதர்", color: "#a85a44", kind: "vocab" },
-  { id: "pronouns", title: "Pronouns", icon: "பெயர்ச்சொல்", color: "#5f6b70", kind: "vocab" },
-  { id: "questions", title: "Question Words", icon: "வினா", color: "#8c6d3f", kind: "vocab" },
-  { id: "grammar", title: "Little Words", icon: "இடைச்சொல்", color: "#5f6b70", kind: "vocab" },
-  { id: "adjectives", title: "Adjectives", icon: "பெயரடை", color: "#7a5470", kind: "vocab" },
-  { id: "adverbs", title: "Adverbs", icon: "வினையுரி", color: "#6b7f4e", kind: "vocab" },
-  { id: "verbs", title: "Verbs", icon: "வினைச்சொல்", color: "#a85a44", kind: "vocab" },
-  { id: "food", title: "Food & Drink", icon: "உணவு", color: "#8c6d3f", kind: "vocab" },
-  { id: "body", title: "The Body", icon: "உடல்", color: "#a85a44", kind: "vocab" },
-  { id: "health", title: "Health", icon: "உடல்நலம்", color: "#6b7f4e", kind: "vocab" },
-  { id: "clothing", title: "Clothing", icon: "ஆடை", color: "#7a5470", kind: "vocab" },
-  { id: "home", title: "Home & Objects", icon: "வீடு", color: "#4a5b8c", kind: "vocab" },
-  { id: "animals", title: "Animals", icon: "விலங்கு", color: "#6b7f4e", kind: "vocab" },
-  { id: "nature", title: "Nature", icon: "இயற்கை", color: "#6b7f4e", kind: "vocab" },
-  { id: "places", title: "Places", icon: "இடம்", color: "#4a5b8c", kind: "vocab" },
-  { id: "travel", title: "Travel & Transport", icon: "பயணம்", color: "#4a5b8c", kind: "vocab" },
-  { id: "time", title: "Time & Days", icon: "நேரம்", color: "#5f6b70", kind: "vocab" },
-  { id: "work", title: "Work & Money", icon: "வேலை", color: "#8c6d3f", kind: "vocab" },
-  { id: "school", title: "School & Learning", icon: "கல்வி", color: "#6b7f4e", kind: "vocab" },
-  { id: "tech", title: "Technology", icon: "கணினி", color: "#5f6b70", kind: "vocab" },
-  { id: "sentences", title: "Sentences", icon: "வாக்கியம்", color: "#8c6d3f", kind: "sentence" },
-];
+ * `ta` is the Tamil text, `tr` its transliteration (light scholarly scheme:
+ * ā ī ū ḷ ṇ ṟ ṭ ḻ ṅ ñ …), `en` the English meaning. The app GENERATES every
+ * exercise from these lists, so adding material here is all it takes.
+ * ==========================================================================*/
+(function () {
+  "use strict";
 
 /* ------------------------------ Alphabet ------------------------------- */
 // Exposed as items { ta, tr, en } where en is the romanised sound.
@@ -2083,11 +2049,35 @@ const KURAL = KURAL_RAW.map(k => Object.assign({}, k, {
   tr: k.tr1 + " " + k.tr2,
 }));
 
-if (typeof window !== "undefined") {
-  window.TOPICS = TOPICS;
-  window.VOCAB = VOCAB;
-  window.SENTENCES = SENTENCES;
-  window.ALPHABET = ALPHABET;
-  window.CONJUGATION = CONJUGATION;
-  window.KURAL = KURAL;
-}
+/* Icons: a word in the language's own script for each topic card. */
+const ICONS = {
+  alphabet: "எழுத்து", greetings: "வணக்கம்", numbers: "எண்", colors: "நிறம்",
+  family: "குடும்பம்", people: "மனிதர்", pronouns: "பெயர்ச்சொல்", questions: "வினா",
+  grammar: "இடைச்சொல்", adjectives: "பெயரடை", adverbs: "வினையுரி", verbs: "வினைச்சொல்",
+  food: "உணவு", body: "உடல்", health: "உடல்நலம்", clothing: "ஆடை", home: "வீடு",
+  animals: "விலங்கு", nature: "இயற்கை", places: "இடம்", travel: "பயணம்",
+  time: "நேரம்", work: "வேலை", school: "கல்வி", tech: "கணினி", sentences: "வாக்கியம்",
+};
+
+window.KILI.register("tamil", {
+  icons: ICONS,
+  ui: { account: "கணக்கு", progress: "முன்னேற்றம்", search: "தேடல்" },
+  alphabet: ALPHABET,
+  alphabetTitle: "Alphabet",
+  vocab: VOCAB,
+  sentences: SENTENCES,
+  conjugation: CONJUGATION,
+  practiceIcons: {
+    review: "மீட்டல்", vocab: "சொல்", sentence: "வாக்கியம்", conjugation: "வினை",
+    listening: "கேட்டல்", mixed: "கலவை", reading: "திருக்குறள்",
+  },
+  reading: {
+    id: "kural", title: "Thirukkural", native: "திருக்குறள்",
+    desc: "Classical couplets of Tiruvaḷḷuvar",
+    blurb: "Couplets from the Tirukkuṟaḷ of Tiruvaḷḷuvar, with the standard numbering.",
+    unit: "couplets", numLabel: "குறள்",
+    lineQuestion: "Which line completes this kural?",
+    items: KURAL,
+  },
+});
+})();

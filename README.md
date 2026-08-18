@@ -1,45 +1,81 @@
-# கிளி · Learn Tamil 🦜
+# கிளி · Kili 🦜
 
-A free, Duolingo-style app for learning **Tamil** — right in the browser, no
-sign-up, no backend. Everything runs client-side and your progress is saved
-locally, so it works offline once loaded and is perfect for **GitHub Pages**.
+A free, Duolingo-style app for learning **eleven languages** — right in the
+browser, no sign-up, no backend. Everything runs client-side and your progress
+is saved locally, so it works offline once loaded and is perfect for **GitHub
+Pages**.
+
+## The courses
+
+Pick one on the first screen; switch whenever you like. Each is a separate
+course with its own progress, streak and spaced-repetition memory.
+
+| Language | Script | Words | Extras |
+|----------|--------|------:|--------|
+| Tamil 🦜 | Tamil (with transliteration) | ~1,330 | alphabet · 16 verb tables · the Tirukkuṟaḷ |
+| Chinese 🀄 | Simplified characters + pinyin | ~640 | pinyin & tones · 成语 idioms |
+| Japanese 🎌 | Kanji + kana, with rōmaji | ~640 | hiragana & katakana · ことわざ |
+| Hindi 🪷 | Devanagari (with transliteration) | ~630 | the varṇamālā · कहावतें |
+| Arabic 🕌 | Arabic, right-to-left | ~630 | the abjad · أمثال |
+| Spanish 🇪🇸 | Latin | ~640 | alphabet & sounds · refranes |
+| French 🇫🇷 | Latin | ~645 | alphabet & sounds · proverbes |
+| German 🇩🇪 | Latin | ~645 | alphabet & sounds · Sprichwörter |
+| Italian 🇮🇹 | Latin | ~630 | alphabet & sounds · proverbi |
+| Portuguese 🇧🇷 | Latin (Brazilian) | ~635 | alphabet & sounds · provérbios |
+| English 📘 | Latin | ~640 | a vocabulary builder with plain-English definitions |
+
+Every course has the same **24 topics**, ~35 **sentences**, and **10 verbs
+conjugated** across past, present and future — so the app works identically
+whichever one you're studying, and a topic you've mastered in one language is
+easy to find in the next.
+
+Each entry carries **three anchors**: the word in its own script, a
+pronunciation or transliteration line, and the English meaning. In the English
+course the third line is a plain-English definition instead, which is what a
+vocabulary builder actually needs.
 
 ## Features
 
 - **Pick a topic, then pick how you practise.** No fixed path — you choose.
-  **25 word topics** to browse: the alphabet, greetings, numbers, colours,
-  family, people, pronouns, question words, little words, adjectives, adverbs,
-  verbs, food & drink, the body, health, clothing, home & objects, animals,
-  nature, places, travel & transport, time & days, work & money, school &
-  learning and technology — plus a full **sentences** set.
+  24 word topics to browse: the alphabet or writing system, greetings, numbers,
+  colours, family, people, pronouns, question words, little words, adjectives,
+  adverbs, verbs, food & drink, the body, health, clothing, home & objects,
+  animals, nature, places, travel & transport, time & days, work & money,
+  school & learning and technology — plus a full **sentences** set.
 - **Eight practice modes**, generated fresh from the content each time:
   - **Flashcards** — flip to reveal, learn at your own pace (not scored)
-  - **Multiple choice** — pick the meaning (Tamil→English or English→Tamil)
-  - **Matching** — tap the Tamil word and its English pair
+  - **Multiple choice** — pick the meaning (either direction)
+  - **Matching** — tap a word and its English pair
   - **Type it** — free typing with lenient checking (script *or* transliteration)
-  - **Listening** — hear the Tamil, choose the meaning
-  - **Speak it** — say the word aloud; your mic checks you (Web Speech, `ta-IN`),
-    with an honest self-check fallback where recognition isn't available
+  - **Listening** — hear it, choose the meaning
+  - **Speak it** — say the word aloud; your mic checks you (Web Speech, in the
+    course's own locale), with an honest self-check fallback where recognition
+    isn't available
   - **Build a sentence** — tap word-tiles in order
-  - **Translate** — read a Tamil sentence, choose the English
+  - **Translate** — read a sentence, choose the English
 - **Spaced-repetition Review.** Every answer updates a per-word memory record
-  (SM-2-style) in `localStorage`; the **Review** track always pools the words
-  you're due to revisit, so weak words come back sooner and mastered ones fade.
+  (SM-2-style) in `localStorage`; the **Review** track pools the words you're
+  due to revisit, so weak words come back sooner and mastered ones fade.
+- **Verb conjugation** in every language, drilled with distractors drawn from
+  *other forms of the same verb* — so you have to pick the right person and
+  tense, not just recognise the word.
+- **A reading track** per language: the Tirukkuṟaḷ in Tamil, chéngyǔ in Chinese,
+  kotowaza in Japanese, and proverbs everywhere else — shown line by line with
+  pronunciation and meaning, and quizzed with "which line completes this?"
 - **Progress & mastery.** A progress screen with a daily-XP goal ring, a streak
   calendar, and per-topic mastery bars (a word is "learned" after two correct
-  reps).
-- **Word search.** Search all ~1,300 words by English, Tamil or transliteration,
-  then jump straight into practice on whatever the search turns up.
+  reps) — kept separately for each language.
+- **Word search.** Search a course by English, script or transliteration, then
+  jump straight into practice on whatever the search turns up.
 - **Username sync.** Pick a username and your progress is stored in this repo as
   [`progress/<username>.json`](./progress) — versioned in git, no third-party
-  service. Because the repo is public, *loading* on a new device needs nothing but
-  the username; *saving* needs a GitHub token you paste once per device (kept in
-  that browser only, never committed). Devices merge instead of overwriting, so
-  practising in two places never loses work.
-- **~1,300 words and ~85 sentences**, each with **Tamil script + transliteration
-  + English**, so beginners always have three anchors.
-- **Tamil audio** via the browser's speech synthesis (tap 🔊). If no Tamil voice
-  is installed, the listening mode falls back to showing the transliteration.
+  service. Because the repo is public, *loading* on a new device needs nothing
+  but the username; *saving* needs a GitHub token you paste once per device
+  (kept in that browser only, never committed). Devices merge instead of
+  overwriting, and one file holds every language you study.
+- **Audio** via the browser's speech synthesis (tap 🔊), in each course's own
+  locale. If no voice for that language is installed, listening mode falls back
+  to showing the pronunciation line.
 - **XP and a day streak**, saved in `localStorage`. No hearts, no lock-outs —
   practise as much as you like.
 - **Full keyboard control.** Every mode is playable without the mouse, and each
@@ -57,12 +93,13 @@ locally, so it works offline once loaded and is perfect for **GitHub Pages**.
   | <kbd>↵</kbd> | everywhere | check, then continue |
   | <kbd>esc</kbd> | everywhere | leave the lesson |
 
-- **Light & dark mode**, responsive for phone and desktop.
+- **Light & dark mode**, responsive for phone and desktop, and right-to-left
+  where the language calls for it.
 
 ## Run locally
 
-It's plain static files — just open `index.html`. For the ES-free scripts this
-works even from `file://`, but to be safe you can serve it:
+It's plain static files — just open `index.html`. Course files are fetched on
+demand, so serve it rather than opening from `file://`:
 
 ```bash
 # any static server works, e.g.
@@ -80,29 +117,48 @@ python -m http.server 8000
 
 The `.nojekyll` file tells Pages to serve the files verbatim.
 
-## Add or edit content
-
-All course material lives in [`data.js`](./data.js) as plain data — and because
-the app *generates* the exercises, you never touch the exercise code:
-
-- Add a word by appending a `["தமிழ்", "tamiḻ", "english"]` row to the right
-  topic in `VOCAB`.
-- Add a sentence to `SENTENCES` with its word tokens (used by the build mode).
-- Add a whole new topic to `TOPICS` and give its words a matching `topic` id.
-
-Every practice mode picks up the new content automatically.
-
 ## Project structure
 
 | File | Purpose |
 |------|---------|
 | `index.html` | Page shell and script tags |
-| `styles.css` | All styling (Duolingo-flavoured, theme-aware) |
-| `data.js` | The entire course as data |
-| `app.js` | Router, lesson engine, exercise types, progress/XP/streak |
+| `styles.css` | All styling (theme-aware, script-aware) |
+| `languages.js` | The language registry, the shared topic spine, and the course loader |
+| `courses/<id>.js` | One course as pure data — words, sentences, verbs, proverbs |
+| `app.js` | Router, lesson engine, exercise types, progress/XP/streak, sync |
 
-## Notes on the Tamil
+Only the course you pick is downloaded, so adding languages doesn't slow the
+app down.
 
-Transliteration uses a light scholarly scheme (ā, ī, ū, ḷ, ṇ, ṟ, ṭ, ...) for
-accuracy; the typing exercises also accept plain-ASCII spellings so you're not
-fighting diacritics. Corrections and additions are welcome.
+## Add or edit content
+
+All course material lives in `courses/` as plain data — and because the app
+*generates* the exercises, you never touch the exercise code:
+
+- Add a word by appending a `["word", "pronunciation", "english"]` row to the
+  right topic's `V(...)` block.
+- Add a sentence with `S(...)`, including its word tokens (used by the build mode).
+- Add a verb table with `C(verb, tr, en, [[form, tr, en, person, tense], …])`.
+
+Every practice mode picks the new content up automatically. Throughout the data
+files the field `ta` means "the text in the language being learned" — the name
+is historical, from when this was a Tamil-only app.
+
+### Adding a whole language
+
+1. Add an entry to `LANGUAGES` in `languages.js`: its id, name, native name,
+   speech locale, script regex (or `null` for Latin), web font and fold rules.
+2. Write `courses/<id>.js` following any existing course, ending with
+   `window.KILI.register("<id>", { … })`.
+
+Nothing else needs to change — the picker, the topic grid, progress and sync
+all pick it up from the registry.
+
+## Notes on the languages
+
+Transliteration uses a light scholarly scheme for the languages that have an
+established one (Tamil, Hindi, Arabic) and pinyin/rōmaji where those are
+standard; for the Latin-script languages the middle line is a plain-English
+respelling with the stressed syllable in CAPS, which is the one thing spelling
+alone won't tell you. Typing exercises also accept plain-ASCII spellings, so
+you're never fighting diacritics. Corrections and additions are welcome.
