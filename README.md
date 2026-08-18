@@ -34,6 +34,28 @@ pronunciation or transliteration line, and the English meaning. In the English
 course the third line is a plain-English definition instead, which is what a
 vocabulary builder actually needs.
 
+## Getting around
+
+The top bar is the constant. The **wordmark on the left** always returns to the
+current course's home screen — from a lesson, a topic, the progress page,
+anywhere. The **language chip on the right** always returns to the picker, so
+you're never more than one click from switching course or starting a new one.
+
+## Themed per language
+
+Each course carries its own colour and ornament, drawn from where the language
+is actually spoken: Japanese in indigo under seigaiha wave crests, Arabic in
+teal under a girih star, Tamil in temple gold under a kolam, French in deep
+blue strewn with fleurs-de-lis, Portuguese in azulejo blue over a Lisbon
+pavement wave. The bones don't change — paper ground, hairline rules, one
+accent doing the work — only the pigment does, so switching course feels like
+picking up a different book rather than using a different app.
+
+Themes live in `languages.js`: a palette (light and dark), six topic hues, and
+a motif drawn as a small tiling SVG. They repaint the app through CSS custom
+properties, so light and dark mode both follow without any JavaScript watching
+the system theme.
+
 ## Features
 
 - **Pick a topic, then pick how you practise.** No fixed path — you choose.
@@ -94,7 +116,8 @@ vocabulary builder actually needs.
   | <kbd>esc</kbd> | everywhere | leave the lesson |
 
 - **Light & dark mode**, responsive for phone and desktop, and right-to-left
-  where the language calls for it.
+  where the language calls for it. Every theme is drawn for both, including a
+  lightened topic palette so the colour still reads on a dark ground.
 
 ## Run locally
 
@@ -148,7 +171,10 @@ is historical, from when this was a Tamil-only app.
 
 1. Add an entry to `LANGUAGES` in `languages.js`: its id, name, native name,
    speech locale, script regex (or `null` for Latin), web font and fold rules.
-2. Write `courses/<id>.js` following any existing course, ending with
+2. Give it a theme — either reuse an existing one by name, or add an entry to
+   `THEMES` (a palette for light and dark, six topic hues) and a tile to
+   `MOTIFS` (a small SVG that repeats).
+3. Write `courses/<id>.js` following any existing course, ending with
    `window.KILI.register("<id>", { … })`.
 
 Nothing else needs to change — the picker, the topic grid, progress and sync

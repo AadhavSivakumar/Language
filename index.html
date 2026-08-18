@@ -15,13 +15,19 @@
   <!-- Top status bar -->
   <header id="topbar" class="topbar" hidden>
     <button id="home-btn" class="home-btn" title="Home" aria-label="Home"><span id="brand-mark" class="mark">கிளி</span><span id="brand-word" class="wordmark">Learn Tamil</span></button>
-    <div class="topbar-stats">
-      <div class="stat stat-streak" title="Day streak">
-        <span id="stat-streak">0</span><span class="stat-label">day streak</span>
+    <div class="topbar-right">
+      <div class="topbar-stats">
+        <div class="stat stat-streak" title="Day streak">
+          <span id="stat-streak">0</span><span class="stat-label">day streak</span>
+        </div>
+        <div class="stat stat-xp" title="Total XP">
+          <span id="stat-xp">0</span><span class="stat-label">xp</span>
+        </div>
       </div>
-      <div class="stat stat-xp" title="Total XP">
-        <span id="stat-xp">0</span><span class="stat-label">xp</span>
-      </div>
+      <!-- Always available: back out to the language list. -->
+      <button id="lang-btn" class="lang-btn" title="Choose a language">
+        <span id="lang-btn-flag" class="lang-btn-flag">🌐</span><span id="lang-btn-name" class="lang-btn-name">Languages</span>
+      </button>
     </div>
   </header>
 

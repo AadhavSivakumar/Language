@@ -83,35 +83,42 @@
     const icons = course.icons || {};
     const has = {};
     VOCAB.forEach(v => { has[v.topic] = true; if (v.also) has[v.also] = true; });
+    // Topic colours come from the course's own palette, so the grid is in the
+    // language's family of hues rather than one global set.
+    const palette = KILI.paletteFor(lang);
     TOPICS = KILI.TOPIC_DEFS.filter(t =>
       t.kind === "alpha" ? !!ALPHABET
       : t.kind === "sentence" ? SENTENCES.length > 0
       : !!has[t.id]
-    ).map(t => Object.assign({}, t, {
+    ).map((t, i) => Object.assign({}, t, {
+      color: palette[i % palette.length].light,
+      colorDark: palette[i % palette.length].dark,
       icon: icons[t.id] || t.title,
       title: t.kind === "alpha" && course.alphabetTitle ? course.alphabetTitle : t.title,
     }));
 
     const pi = course.practiceIcons || {};
+    const pc = (n) => palette[n % palette.length].light;
+    const pcd = (n) => palette[n % palette.length].dark;
     PRACTICE = [
-      { id: "prac-review", title: "Review", icon: pi.review || "Review", color: "#a85a44",
+      { id: "prac-review", title: "Review", icon: pi.review || "Review", color: pc(1), colorDark: pcd(1),
         kind: "practice", pool: "review", desc: "Spaced repetition — your words that are due" },
-      { id: "prac-vocab", title: "Vocabulary", icon: pi.vocab || "Words", color: "#4a5b8c",
+      { id: "prac-vocab", title: "Vocabulary", icon: pi.vocab || "Words", color: pc(3), colorDark: pcd(3),
         kind: "practice", pool: "vocab", desc: "Mixed word practice from every topic" },
-      { id: "prac-sentence", title: "Sentences", icon: pi.sentence || "Sentences", color: "#8c6d3f",
+      { id: "prac-sentence", title: "Sentences", icon: pi.sentence || "Sentences", color: pc(0), colorDark: pcd(0),
         kind: "practice", pool: "sentence", desc: "Build and translate full sentences" },
-      { id: "prac-conjugation", title: "Conjugation", icon: pi.conjugation || "Verbs", color: "#a85a44",
+      { id: "prac-conjugation", title: "Conjugation", icon: pi.conjugation || "Verbs", color: pc(2), colorDark: pcd(2),
         kind: "practice", pool: "conjugation", desc: "Verb tenses — past, present & future" },
-      { id: "prac-listening", title: "Listening", icon: pi.listening || "Listen", color: "#6b7f4e",
+      { id: "prac-listening", title: "Listening", icon: pi.listening || "Listen", color: pc(4), colorDark: pcd(4),
         kind: "practice", pool: "listening", desc: "Ear training — words and sentences" },
-      { id: "prac-mixed", title: "Mixed review", icon: pi.mixed || "Mixed", color: "#7a5470",
+      { id: "prac-mixed", title: "Mixed review", icon: pi.mixed || "Mixed", color: pc(5), colorDark: pcd(5),
         kind: "practice", pool: "mixed", desc: "A bit of everything you've seen" },
     ].filter(p => p.pool !== "conjugation" || CONJUGATION.length)
      .filter(p => p.pool !== "sentence" || SENTENCES.length);
     if (READING) {
       PRACTICE.splice(PRACTICE.length - 1, 0, {
         id: "prac-reading", title: READING.title, icon: pi.reading || READING.native || READING.title,
-        color: "#8c6d3f", kind: "practice", pool: "reading", desc: READING.desc,
+        color: pc(0), colorDark: pcd(0), kind: "practice", pool: "reading", desc: READING.desc,
       });
     }
 
@@ -122,6 +129,7 @@
     // The interface is in English; individual words carry their own lang tag
     // (see targetSpan) so screen readers and hyphenation get them right.
     document.documentElement.lang = "en";
+    KILI.applyTheme(lang);
     pickVoice();
     setBrand();
   }
@@ -134,6 +142,13 @@
     n.lang = LANG.speech;
     if (LANG.dir === "rtl") n.dir = "rtl";
     return n;
+  }
+  /* A topic's hue, set as a light/dark pair so the stylesheet can pick the
+   * legible one without JavaScript watching the colour scheme. */
+  function paintTopic(node, topic) {
+    node.style.setProperty("--tc-l", topic.color);
+    node.style.setProperty("--tc-d", topic.colorDark || topic.color);
+    return node;
   }
   const targetSpan = (cls, text) => tagTarget(el("span", cls, text));
   const targetDiv = (cls, text) => tagTarget(el("div", cls, text));
@@ -529,14 +544,21 @@
     const mark = $("#brand-mark"), word = $("#brand-word");
     if (mark) { mark.textContent = LANG.mark; mark.dir = LANG.dir === "rtl" ? "rtl" : "ltr"; }
     if (word) word.textContent = "Learn " + LANG.name;
+    const flag = $("#lang-btn-flag"), name = $("#lang-btn-name");
+    if (flag) flag.textContent = LANG.emoji;
+    if (name) name.textContent = LANG.name;
     document.title = "Kili · Learn " + LANG.name;
   }
+  /* The topbar is the constant: the wordmark always returns to this course's
+   * home screen, the chip beside the stats always returns to the language
+   * list. Both are present on every screen, lessons included. */
   function renderTopbar() {
     topbar.hidden = false;
     $("#stat-streak").textContent = state.streak;
     $("#stat-xp").textContent = state.xp;
   }
   $("#home-btn").addEventListener("click", () => { if (LANG) renderHome(); else renderPicker(); });
+  $("#lang-btn").addEventListener("click", () => renderPicker(true));
 
   // An icon for a screen that isn't a topic, in the course's own script where
   // the course supplies one.
@@ -550,8 +572,13 @@
   function renderPicker(canCancel) {
     if ("speechSynthesis" in window) speechSynthesis.cancel();
     app.innerHTML = ""; onKey = null;
+    // The picker belongs to no course, so it sits on the neutral ground —
+    // each card supplies its own colour instead.
+    KILI.clearTheme();
+    document.documentElement.style.setProperty("--target-font", "'Fraunces', Georgia, serif");
+    document.title = "Kili · Learn a language";
     topbar.hidden = !LANG;
-    if (LANG) renderTopbar();
+    if (LANG) { renderTopbar(); setBrand(); }
 
     const wrap = el("div", "home picker");
 
@@ -563,38 +590,53 @@
 
     const hero = el("div", "hero picker-hero");
     hero.appendChild(el("div", "hero-logo picker-logo", "🦜"));
-    const hg = el("div");
-    hg.appendChild(el("h1", "hero-title", "What would you like to learn?"));
-    hg.appendChild(el("p", "hero-sub",
-      "Eleven courses, one engine. Words, sentences and verb conjugation in each — " +
-      "with your own progress, streak and spaced-repetition memory kept separately per language."));
-    hero.appendChild(hg);
+    hero.appendChild(el("span", "picker-kicker", "Kili · eleven courses"));
+    hero.appendChild(el("h1", "hero-title", "What would you like to learn?"));
+    hero.appendChild(el("p", "hero-sub",
+      "Words, sentences, verb conjugation and a spaced-repetition review track in " +
+      "every language — each with its own progress and streak, so studying one " +
+      "never disturbs another."));
     wrap.appendChild(hero);
 
     const grid = el("div", "lang-grid");
     KILI.LANGUAGES.forEach(lang => {
       const saved = readLang(lang.id);
+      const sw = KILI.swatchFor(lang);
       const card = el("button", "lang-card" + (LANG && LANG.id === lang.id ? " current" : ""));
       card.type = "button";
-      card.appendChild(el("span", "lang-emoji", lang.emoji));
+      // The card carries its language's own colour and ornament, so the
+      // choice can be made by eye before a single course is loaded.
+      const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      card.style.setProperty("--lc", dark ? sw.accentDark : sw.accent);
+      card.style.setProperty("--ls", dark ? sw.softDark : sw.soft);
+      card.style.setProperty("--lm", KILI.motifFor(lang, dark));
+
+      const script = el("span", "lang-script", lang.glyph || lang.mark);
+      if (lang.dir === "rtl") script.dir = "rtl";
+      card.appendChild(script);
+
       const txt = el("span", "lang-text");
       txt.appendChild(el("span", "lang-name", lang.name));
       const native = el("span", "lang-native", lang.native);
       if (lang.dir === "rtl") native.dir = "rtl";
       txt.appendChild(native);
-      txt.appendChild(el("span", "lang-note",
-        saved && saved.xp ? saved.xp + " XP · " + (saved.streak || 0) + "-day streak"
-                          : "Start from scratch"));
+      txt.appendChild(el("span", "lang-count", lang.tagline));
+      const note = el("span", "lang-note" + (saved && saved.xp ? " has-progress" : ""),
+        saved && saved.xp
+          ? saved.xp + " XP · " + (saved.streak || 0) + "-day streak · continue"
+          : "Start from the beginning");
+      txt.appendChild(note);
       card.appendChild(txt);
       card.addEventListener("click", () => switchLanguage(lang.id));
       grid.appendChild(card);
     });
     wrap.appendChild(grid);
 
-    const foot = el("div", "home-footer");
+    const foot = el("div", "picker-foot");
     foot.appendChild(el("p", "field-note",
-      "You can switch at any time — nothing is lost. Pronunciation uses your device's " +
-      "voices, so how much you hear depends on which ones it has installed."));
+      "Switch whenever you like — nothing is lost, and the language chip in the " +
+      "top bar brings you back here from anywhere. Pronunciation uses your device's " +
+      "own voices, so how much you hear depends on which ones it has installed."));
     wrap.appendChild(foot);
 
     app.appendChild(wrap);
@@ -734,44 +776,79 @@
     })[mode];
   }
 
-  /* ============================== HOME VIEW ============================== */
+  /* ============================== HOME VIEW ==============================
+   * A course's front page, in three movements: the themed hero band saying
+   * where you are, the figures saying how you're doing, and one obvious next
+   * thing to do — then the full grid for when you'd rather choose yourself. */
   function renderHome() {
     if ("speechSynthesis" in window) speechSynthesis.cancel();
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "home");
 
+    /* -- hero -- */
     const hero = el("div", "hero");
     hero.appendChild(targetDiv("hero-logo", LANG.mark));
-    const hg = el("div");
-    hg.appendChild(el("h1", "hero-title", "Learn " + LANG.name));
-    hg.appendChild(el("p", "hero-sub", LANG.blurb + " Practise however suits you."));
-    hero.appendChild(hg);
+    const title = el("h1", "hero-title");
+    const native = targetSpan("hero-native", LANG.native);
+    title.appendChild(native);
+    title.appendChild(document.createTextNode("Learn " + LANG.name));
+    hero.appendChild(title);
+    hero.appendChild(el("p", "hero-sub", LANG.blurb));
     wrap.appendChild(hero);
 
+    /* -- the four figures that matter -- */
+    const due = dueCount();
+    const todayXp = (state.today && state.today.date === todayStr()) ? state.today.xp : 0;
+    const stats = el("div", "home-stats");
+    [
+      [state.xp, "total xp", false],
+      [state.streak, state.streak === 1 ? "day streak" : "day streak", false],
+      [totalLearned(), "words learned", false],
+      [due, due === 1 ? "word due" : "words due", true],
+    ].forEach(([num, label, isDue]) => {
+      const cell = el("div", "home-stat" + (isDue && due ? " is-due" : ""));
+      cell.appendChild(el("div", "home-stat-num", String(num)));
+      cell.appendChild(el("div", "home-stat-label", label));
+      stats.appendChild(cell);
+    });
+    wrap.appendChild(stats);
+
+    /* -- one clear next action -- */
+    const review = PRACTICE.filter(p => p.pool === "review")[0];
+    if (review) {
+      const cta = el("button", "home-cta");
+      cta.type = "button";
+      const ctaText = el("div", "home-cta-text");
+      ctaText.appendChild(el("div", "home-cta-title",
+        due ? "Review " + due + (due === 1 ? " word" : " words") : "Start learning"));
+      ctaText.appendChild(el("div", "home-cta-sub",
+        due ? "Spaced repetition — the words you're due to see again"
+            : "Nothing due right now — meet some new words instead"));
+      cta.appendChild(ctaText);
+      cta.appendChild(el("span", "home-cta-go", "→"));
+      cta.addEventListener("click", () => renderTopic(review));
+      wrap.appendChild(cta);
+    }
+
+    /* -- secondary navigation -- */
     const nav = el("div", "home-nav");
-    const browseBtn = el("button", "nav-btn", "Search words");
-    browseBtn.type = "button";
-    browseBtn.addEventListener("click", renderBrowse);
-    const progBtn = el("button", "nav-btn", "My progress");
-    progBtn.type = "button";
-    progBtn.addEventListener("click", renderProgress);
-    const acctBtn = el("button", "nav-btn", acct.username ? acct.username : "Sign in");
-    acctBtn.type = "button";
-    acctBtn.addEventListener("click", renderAccount);
-    const langBtn = el("button", "nav-btn", LANG.emoji + " " + LANG.name);
-    langBtn.type = "button";
-    langBtn.title = "Switch language";
-    langBtn.addEventListener("click", () => renderPicker(true));
-    nav.appendChild(browseBtn); nav.appendChild(progBtn);
-    nav.appendChild(acctBtn); nav.appendChild(langBtn);
+    [["Search words", renderBrowse],
+     ["My progress", renderProgress],
+     [acct.username || "Sign in", renderAccount],
+     ["All languages", () => renderPicker(true)]].forEach(([label, go]) => {
+      const b = el("button", "nav-btn", label);
+      b.type = "button";
+      b.addEventListener("click", go);
+      nav.appendChild(b);
+    });
     wrap.appendChild(nav);
 
     const makeCard = (topic, subText) => {
       const card = el("button", "topic-card");
       card.type = "button";
-      card.style.setProperty("--tc", topic.color);
-      card.appendChild(el("span", "topic-icon", topic.icon));
+      paintTopic(card, topic);
+      card.appendChild(targetSpan("topic-icon", topic.icon));
       card.appendChild(el("span", "topic-name", topic.title));
       card.appendChild(el("span", "topic-count", subText));
       if (state.practiced[topic.id]) card.appendChild(el("span", "topic-badge", "●"));
@@ -780,27 +857,30 @@
     };
 
     // Cross-topic practice tracks first — "what do you want to practise?"
-    wrap.appendChild(el("h2", "section-title", "Choose what to practise"));
+    const pracTitle = el("h2", "section-title", "Choose what to practise");
+    wrap.appendChild(pracTitle);
     const pracGrid = el("div", "topic-grid practice-grid");
     PRACTICE.forEach(p => {
       let sub = p.desc;
       if (p.pool === "review") {
-        const d = dueCount();
-        sub = d ? d + (d === 1 ? " word" : " words") + " due · spaced repetition"
-                : "All caught up — or learn new words";
+        sub = due ? due + (due === 1 ? " word" : " words") + " due · spaced repetition"
+                  : "All caught up — or learn new words";
       }
       pracGrid.appendChild(makeCard(p, sub));
     });
     wrap.appendChild(pracGrid);
 
     // Then browse individual topics.
-    wrap.appendChild(el("h2", "section-title", "Or explore a topic"));
+    const topicTitle = el("h2", "section-title", "Or explore a topic");
+    topicTitle.appendChild(el("span", "section-note",
+      VOCAB.length + " words · " + TOPICS.length + " topics"));
+    wrap.appendChild(topicTitle);
     const grid = el("div", "topic-grid");
     TOPICS.forEach(topic => grid.appendChild(makeCard(topic, countLabel(topic))));
     wrap.appendChild(grid);
 
     const footer = el("div", "home-footer");
-    const reset = el("button", "link-btn", "Reset progress");
+    const reset = el("button", "link-btn", "Reset " + LANG.name + " progress");
     reset.addEventListener("click", () => {
       if (confirm("Reset your " + LANG.name + " XP and streak? Your other languages are untouched."))
         { state = defaultState(); save(); renderHome(); }
@@ -996,7 +1076,7 @@
       const { learned, total } = topicMastery(t.id);
       const p = total ? Math.round((learned / total) * 100) : 0;
       const row = el("div", "mastery-row");
-      row.style.setProperty("--tc", t.color);
+      paintTopic(row, t);
       const top = el("div", "mastery-top");
       top.appendChild(el("span", "mastery-name", t.title));
       top.appendChild(el("span", "mastery-count", learned + " / " + total));
@@ -1054,8 +1134,9 @@
     practiseBtn.addEventListener("click", () => {
       const items = practiseBtn._pool || [];
       if (items.length < 4) return;
+      const hue = KILI.paletteFor(LANG)[3];
       renderTopic({ id: "prac-custom", title: "Search results", icon: uiIcon("search", "Search"),
-        color: "#4a5b8c", kind: "practice", pool: "custom", items });
+        color: hue.light, colorDark: hue.dark, kind: "practice", pool: "custom", items });
     });
     foot.appendChild(practiseBtn);
     wrap.appendChild(foot);
@@ -1103,7 +1184,7 @@
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "topic-view");
-    wrap.style.setProperty("--tc", topic.color);
+    paintTopic(wrap, topic);
 
     const back = el("button", "back-btn", "← All topics");
     back.addEventListener("click", renderHome);
@@ -1421,7 +1502,7 @@
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "lesson");
-    wrap.style.setProperty("--tc", session.topic.color);
+    paintTopic(wrap, session.topic);
 
     const head = el("div", "lesson-head");
     const quit = el("button", "quit", "×");
@@ -1925,7 +2006,7 @@
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "lesson kural-reader");
-    wrap.style.setProperty("--tc", topic.color);
+    paintTopic(wrap, topic);
 
     const head = el("div", "lesson-head");
     const quit = el("button", "quit", "×");
@@ -1991,7 +2072,7 @@
       renderTopbar();
       app.innerHTML = ""; onKey = null;
       const wrap = el("div", "lesson");
-      wrap.style.setProperty("--tc", topic.color);
+      paintTopic(wrap, topic);
 
       const head = el("div", "lesson-head");
       const quit = el("button", "quit", "×");
@@ -2085,7 +2166,7 @@
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "lesson done-screen");
-    wrap.style.setProperty("--tc", session.topic.color);
+    paintTopic(wrap, session.topic);
     const acc = session.total ? Math.round((session.correct / session.total) * 100) : 100;
     wrap.appendChild(el("div", "big-emoji", acc + "%"));
     wrap.appendChild(el("h2", "done-title", acc >= 80 ? "Well done." : "Keep practising."));
