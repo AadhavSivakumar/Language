@@ -230,7 +230,7 @@
       ["a", "UH", "points to any one thing"],
       ["also", "AWL-soh", "in addition"],
       ["although", "awl-THOH", "despite the fact that"],
-      ["however", "how-EV-er", "introduces a contrast"],
+      ["however", "how-EV-er", "but — starting a contrasting sentence"],
       ["not", "NOT", "makes a sentence negative"],
       ["while", "WYL", "during the time that"],
     ]),

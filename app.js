@@ -1303,15 +1303,30 @@
   /* =========================== EXERCISE GENERATION ====================== */
   const MAX_Q = 10;
 
+  /* Wrong-meaning options. Exact string difference isn't enough: "short" and
+   * "short / low" share a sense, so offering both makes two options right. */
   function distractorsEn(pool, correctEn, n) {
-    const opts = shuffle(pool.filter(x => x.en !== correctEn).map(x => x.en));
-    const seen = new Set(), out = [];
-    for (const o of opts) { if (!seen.has(o)) { seen.add(o); out.push(o); } if (out.length === n) break; }
+    const opts = shuffle(pool.filter(x => !sameMeaning(x.en, correctEn)).map(x => x.en));
+    const out = [];
+    for (const o of opts) {
+      if (out.some(p => sameMeaning(p, o))) continue;
+      out.push(o);
+      if (out.length === n) break;
+    }
     return out;
   }
-  function distractorsTa(pool, correctTa, n) {
-    const opts = shuffle(pool.filter(x => x.ta !== correctTa));
+  function distractorsTa(pool, correct, n) {
+    const opts = shuffle(pool.filter(x =>
+      x.ta !== correct.ta && !sameMeaning(x.en, correct.en)));
     return opts.slice(0, n);
+  }
+  /* Two glosses count as the same meaning if either lists the other among its
+   * slash- or comma-separated senses: "mother" vs "mother / mum". */
+  function sameMeaning(a, b) {
+    if (!a || !b) return false;
+    const senses = (s) => normalize(s).split(/[\/,;]/).map(x => x.trim()).filter(Boolean);
+    const A = senses(a), B = senses(b);
+    return A.some(x => B.indexOf(x) >= 0);
   }
 
   function genChoice(pool) {
@@ -1324,7 +1339,7 @@
                  promptTarget: true,
                  ask: "What does this mean?", choices, answer: item.en };
       } else {
-        const others = distractorsTa(pool, item.ta, 3);
+        const others = distractorsTa(pool, item, 3);
         const choices = shuffle([item].concat(others));
         const subFor = {}; choices.forEach(c => subFor[c.ta] = c.tr);
         return { type: "select", prompt: item.en, promptSub: "", key: wkey(item),
@@ -1337,7 +1352,12 @@
 
   function genMatch(pool, groupSize) {
     const n = groupSize || 5;
-    const items = shuffle(pool);
+    // Drop anything that repeats a meaning already in the pool, so no board
+    // can end up with two tiles that are both right for the same English.
+    const usedEn = [], items = shuffle(pool).filter(x => {
+      if (usedEn.some(e => sameMeaning(e, x.en))) return false;
+      usedEn.push(x.en); return true;
+    });
     const boards = [];
     for (let i = 0; i < items.length && boards.length < 3; i += n) {
       const group = items.slice(i, i + n);
@@ -1417,7 +1437,8 @@
   function genEn2Ta(sentences) {
     const items = sample(sentences, Math.min(MAX_Q, sentences.length));
     return items.map(s => {
-      const others = shuffle(sentences.filter(x => x.ta !== s.ta)).slice(0, 3);
+      const others = shuffle(sentences.filter(x =>
+        x.ta !== s.ta && !sameMeaning(x.en, s.en))).slice(0, 3);
       const all = [s].concat(others);
       const subFor = {}; all.forEach(x => subFor[x.ta] = x.tr);
       return { type: "select", prompt: s.en, promptSub: "", key: wkey(s),
