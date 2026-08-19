@@ -10,24 +10,24 @@ Pages**.
 Pick one on the first screen; switch whenever you like. Each is a separate
 course with its own progress, streak and spaced-repetition memory.
 
-| Language | Script | Words | Extras |
-|----------|--------|------:|--------|
-| Tamil 🦜 | Tamil (with transliteration) | ~1,330 | alphabet · 16 verb tables · the Tirukkuṟaḷ |
-| Chinese 🀄 | Simplified characters + pinyin | ~640 | pinyin & tones · 成语 idioms |
-| Japanese 🎌 | Kanji + kana, with rōmaji | ~640 | hiragana & katakana · ことわざ |
-| Hindi 🪷 | Devanagari (with transliteration) | ~630 | the varṇamālā · कहावतें |
-| Arabic 🕌 | Arabic, right-to-left | ~630 | the abjad · أمثال |
-| Spanish 🇪🇸 | Latin | ~640 | alphabet & sounds · refranes |
-| French 🇫🇷 | Latin | ~645 | alphabet & sounds · proverbes |
-| German 🇩🇪 | Latin | ~645 | alphabet & sounds · Sprichwörter |
-| Italian 🇮🇹 | Latin | ~630 | alphabet & sounds · proverbi |
-| Portuguese 🇧🇷 | Latin (Brazilian) | ~635 | alphabet & sounds · provérbios |
-| English 📘 | Latin | ~640 | a vocabulary builder with plain-English definitions |
+| Language | Script | Words | Sentences | Verbs | Extras |
+|----------|--------|------:|----------:|------:|--------|
+| Tamil 🦜 | Tamil (with transliteration) | 1,326 | 103 | 20 | alphabet · 20 Tirukkuṟaḷ couplets |
+| Chinese 🀄 | Simplified characters + pinyin | 1,070 | 51 | 15 | pinyin & tones · 15 成语 |
+| Japanese 🎌 | Kanji + kana, with rōmaji | 1,064 | 51 | 15 | hiragana & katakana · 15 ことわざ |
+| Arabic 🕌 | Arabic, right-to-left | 1,044 | 51 | 15 | the abjad · 15 أمثال |
+| French 🇫🇷 | Latin | 1,047 | 51 | 15 | alphabet & sounds · 15 proverbes |
+| Hindi 🪷 | Devanagari (with transliteration) | 1,041 | 51 | 15 | the varṇamālā · 15 कहावतें |
+| Spanish 🇪🇸 | Latin | 1,039 | 51 | 15 | alphabet & sounds · 15 refranes |
+| German 🇩🇪 | Latin | 1,038 | 51 | 15 | alphabet & sounds · 15 Sprichwörter |
+| Portuguese 🇧🇷 | Latin (Brazilian) | 1,036 | 51 | 15 | alphabet & sounds · 15 provérbios |
+| Italian 🇮🇹 | Latin | 1,029 | 51 | 15 | alphabet & sounds · 15 proverbi |
+| English 📘 | Latin | 1,029 | 51 | 15 | a vocabulary builder with plain-English definitions |
 
-Every course has the same **24 topics**, ~35 **sentences**, and **10 verbs
-conjugated** across past, present and future — so the app works identically
-whichever one you're studying, and a topic you've mastered in one language is
-easy to find in the next.
+Every course has the same **24 topics**, so the app works identically whichever
+one you're studying and a topic you've mastered in one language is easy to find
+in the next. Each verb is conjugated across past, present and future for every
+person — around 230 forms per course.
 
 Each entry carries **three anchors**: the word in its own script, a
 pronunciation or transliteration line, and the English meaning. In the English
@@ -52,6 +52,18 @@ two halves, drillable with flashcards, matching, listening, typing and speech.
 Chinese and Japanese have no alphabet in the strict sense, so they get the
 thing that actually does the job: the full pinyin sound system for Chinese,
 both kana syllabaries for Japanese.
+
+## No question has two right answers
+
+Languages are full of synonyms — Tamil has two everyday words for *mother*,
+Portuguese has *o* and *a* both meaning *it*. A quiz that picks its wrong
+answers by "a different spelling" will sooner or later offer two options that
+are both correct and mark one of them wrong.
+
+Every generator here filters distractors by **meaning** rather than spelling,
+comparing the slash- and comma-separated senses of each gloss. A test drives
+every topic of every course and inspects the screens it produces; it currently
+checks over 6,000 of them and finds none with two right answers.
 
 ## Getting around
 
