@@ -495,7 +495,7 @@
     onKey = (e) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        if (session) renderTopic(session.topic); else renderHome();
+        if (session) goBack(() => renderTopic(session.topic)); else renderHome();
         return;
       }
       if (handler) handler(e);
@@ -574,6 +574,115 @@
     return b;
   }
 
+  /* ================================ ROUTER ===============================
+   * Every screen is a real entry in browser history, so Back and Forward do
+   * what they do everywhere else, and any screen can be linked to:
+   *
+   *   #/                       the language picker
+   *   #/spanish                that course's home
+   *   #/spanish/search         the word search
+   *   #/spanish/progress       the progress screen
+   *   #/spanish/account        account & sync
+   *   #/spanish/t/food         a topic
+   *   #/spanish/t/food/choice  a practice session (starts fresh on Back/Forward,
+   *                            since a session's questions are drawn at random
+   *                            and there is nothing meaningful to restore)
+   *
+   * Each render function calls mark() with the route it represents. mark()
+   * pushes unless we are in the middle of restoring a route, which is what
+   * stops Back from fighting the renderer.
+   * ==================================================================== */
+  let restoring = false;
+
+  function hashFor(r) {
+    if (!r || r.v === "picker") return "#/";
+    const base = "#/" + r.lang;
+    switch (r.v) {
+      case "home":     return base;
+      case "search":   return base + "/search";
+      case "progress": return base + "/progress";
+      case "account":  return base + "/account";
+      case "custom":   return base + "/search";
+      case "topic":    return base + "/t/" + r.topic;
+      case "mode":     return base + "/t/" + r.topic + "/" + r.mode +
+                              (r.level && r.level !== "all" ? "/" + r.level : "");
+      default:         return base;
+    }
+  }
+
+  function parseHash(hash) {
+    const parts = (hash || "").replace(/^#\/?/, "").split("/").filter(Boolean);
+    if (!parts.length) return { v: "picker" };
+    const lang = parts[0];
+    if (!KILI.byId(lang)) return { v: "picker" };
+    if (parts.length === 1) return { v: "home", lang };
+    if (parts[1] === "t") {
+      if (!parts[2]) return { v: "home", lang };
+      if (parts[3]) return { v: "mode", lang, topic: parts[2], mode: parts[3], level: parts[4] || "all" };
+      return { v: "topic", lang, topic: parts[2] };
+    }
+    if (["search", "progress", "account"].indexOf(parts[1]) >= 0)
+      return { v: parts[1], lang };
+    return { v: "home", lang };
+  }
+
+  /* Record the screen now on display. Depth counts our own entries so the
+   * in-app back arrows know whether history.back() would leave the site. */
+  function mark(route) {
+    if (restoring) return;
+    if (LANG && !route.lang) route.lang = LANG.id;
+    const here = hashFor(route);
+    const prev = history.state;
+    route.d = prev && typeof prev.d === "number" ? prev.d : 0;
+    try {
+      if (location.hash === here) history.replaceState(route, "", here);
+      else { route.d += 1; history.pushState(route, "", here); }
+    } catch (e) {}
+  }
+
+  /* Find a topic object by id across the topic grid, the practice tracks and
+   * the alphabet section. */
+  function topicById(id) {
+    const all = TOPICS.concat(PRACTICE, ALPHA_CARDS);
+    for (const t of all) if (t.id === id) return t;
+    return null;
+  }
+
+  /* Draw whatever the given route names, without recording it again. */
+  function applyRoute(r) {
+    if (!r || r.v === "picker") return renderPicker(!!LANG);
+    if (!LANG || LANG.id !== r.lang) return switchLanguage(r.lang, r);
+    const topic = r.topic ? topicById(r.topic) : null;
+    switch (r.v) {
+      case "search":   return renderBrowse();
+      case "progress": return renderProgress();
+      case "account":  return renderAccount();
+      // A search-results session can't be restored — its word list only ever
+      // existed in memory — so Back lands on the search screen itself.
+      case "custom":   return renderBrowse();
+      case "topic":    return topic ? renderTopic(topic) : renderHome();
+      case "mode":     return topic ? startMode(topic, r.mode, r.level || "all") : renderHome();
+      default:         return renderHome();
+    }
+  }
+
+  function restore(r) {
+    restoring = true;
+    try { applyRoute(r); } finally { restoring = false; }
+  }
+
+  window.addEventListener("popstate", (e) => {
+    restore(e.state || parseHash(location.hash));
+  });
+
+  /* The in-app back arrows: step through history where we have history to
+   * step through, so Back and the arrow agree; otherwise go to the parent. */
+  function goBack(fallback) {
+    const st = history.state;
+    if (st && typeof st.d === "number" && st.d > 0) history.back();
+    else fallback();
+  }
+
   /* ------------------------------- Top bar ------------------------------- */
   function setBrand() {
     const mark = $("#brand-mark"), word = $("#brand-word");
@@ -606,6 +715,7 @@
    * so returning learners can see where they left off. */
   function renderPicker(canCancel) {
     if ("speechSynthesis" in window) speechSynthesis.cancel();
+    mark({ v: "picker" });
     app.innerHTML = ""; onKey = null;
     // The picker belongs to no course, so it sits on the neutral ground —
     // each card supplies its own colour instead.
@@ -619,7 +729,7 @@
 
     if (canCancel && LANG) {
       const back = el("button", "back-btn", "← Back to " + LANG.name);
-      back.addEventListener("click", renderHome);
+      back.addEventListener("click", () => goBack(renderHome));
       wrap.appendChild(back);
     }
 
@@ -679,10 +789,10 @@
   }
 
   /* Load a course (once) and hand the engine over to it. */
-  function switchLanguage(id) {
+  function switchLanguage(id, then) {
     const lang = KILI.byId(id);
     if (!lang) return renderPicker();
-    if (LANG && LANG.id === id) return renderHome();
+    if (LANG && LANG.id === id) return then ? restore(then) : renderHome();
     app.innerHTML = "";
     const loading = el("div", "home");
     loading.appendChild(el("p", "loading-note", "Loading the " + lang.name + " course…"));
@@ -691,10 +801,16 @@
     KILI.load(lang).then(course => {
       try { localStorage.setItem(LANG_KEY, id); } catch (e) {}
       useCourse(lang, course);
-      renderHome();
+      // Landing straight on a deep-linked screen, or on the course home.
+      if (then) restore(then); else renderHome();
       // A signed-in learner may have progress in this language on another
       // device; fetch it quietly and repaint if anything lands.
-      if (acct.username) syncNow({}).then(() => { if (app.querySelector(".home")) renderHome(); });
+      if (acct.username) syncNow({}).then(() => {
+        if (app.querySelector(".home") && !app.querySelector(".picker")) {
+          restoring = true;
+          try { renderHome(); } finally { restoring = false; }
+        }
+      });
     }).catch(err => {
       loading.innerHTML = "";
       loading.appendChild(el("p", "field-warn", err.message ||
@@ -822,6 +938,7 @@
    * thing to do — then the full grid for when you'd rather choose yourself. */
   function renderHome() {
     if ("speechSynthesis" in window) speechSynthesis.cancel();
+    mark({ v: "home" });
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "home");
@@ -946,12 +1063,13 @@
 
   /* ============================= ACCOUNT VIEW ============================ */
   function renderAccount() {
+    mark({ v: "account" });
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "topic-view account-view");
 
     const back = el("button", "back-btn", "← Home");
-    back.addEventListener("click", renderHome);
+    back.addEventListener("click", () => goBack(renderHome));
     wrap.appendChild(back);
 
     const head = el("div", "topic-head");
@@ -1065,12 +1183,13 @@
 
   /* ============================ PROGRESS VIEW ============================ */
   function renderProgress() {
+    mark({ v: "progress" });
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "topic-view progress-view");
 
     const back = el("button", "back-btn", "← Home");
-    back.addEventListener("click", renderHome);
+    back.addEventListener("click", () => goBack(renderHome));
     wrap.appendChild(back);
 
     const head = el("div", "topic-head");
@@ -1149,12 +1268,13 @@
 
   /* ============================= WORD BROWSER =========================== */
   function renderBrowse() {
+    mark({ v: "search" });
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "topic-view browse-view");
 
     const back = el("button", "back-btn", "← Home");
-    back.addEventListener("click", renderHome);
+    back.addEventListener("click", () => goBack(renderHome));
     wrap.appendChild(back);
 
     const head = el("div", "topic-head");
@@ -1233,13 +1353,15 @@
 
   /* ============================== TOPIC VIEW ============================= */
   function renderTopic(topic) {
+    mark(topic.pool === "custom" && topic.id === "prac-custom"
+      ? { v: "custom" } : { v: "topic", topic: topic.id });
     renderTopbar();
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "topic-view");
     paintTopic(wrap, topic);
 
     const back = el("button", "back-btn", "← All topics");
-    back.addEventListener("click", renderHome);
+    back.addEventListener("click", () => goBack(renderHome));
     wrap.appendChild(back);
 
     const head = el("div", "topic-head");
@@ -1516,6 +1638,8 @@
 
   /* ============================ SESSION RUNNER ========================== */
   function startMode(topic, mode, level) {
+    if (topic.id !== "prac-custom")
+      mark({ v: "mode", topic: topic.id, mode, level: level || "all" });
     state.practiced[topic.id] = true; save();
 
     if (mode === "flash") return startFlashcards(topic, level);
@@ -1580,7 +1704,7 @@
     const head = el("div", "lesson-head");
     const quit = el("button", "quit", "×");
     quit.setAttribute("aria-label", "Quit");
-    quit.addEventListener("click", () => renderTopic(session.topic));
+    quit.addEventListener("click", () => goBack(() => renderTopic(session.topic)));
     head.appendChild(quit);
 
     const bar = el("div", "progress");
@@ -2084,7 +2208,7 @@
     const head = el("div", "lesson-head");
     const quit = el("button", "quit", "×");
     quit.setAttribute("aria-label", "Back");
-    quit.addEventListener("click", () => renderTopic(topic));
+    quit.addEventListener("click", () => goBack(() => renderTopic(topic)));
     head.appendChild(quit);
     head.appendChild(targetDiv("kural-head-title", R.native || R.title || ""));
     wrap.appendChild(head);
@@ -2114,7 +2238,7 @@
 
     const foot = el("div", "check-foot");
     const done = el("button", "btn btn-primary", "Done reading");
-    done.addEventListener("click", () => { grantXp(topic, 0, 0); renderTopic(topic); });
+    done.addEventListener("click", () => { grantXp(topic, 0, 0); goBack(() => renderTopic(topic)); });
     foot.appendChild(done);
     body.appendChild(foot);
 
@@ -2149,7 +2273,7 @@
 
       const head = el("div", "lesson-head");
       const quit = el("button", "quit", "×");
-      quit.addEventListener("click", () => renderTopic(topic));
+      quit.addEventListener("click", () => goBack(() => renderTopic(topic)));
       head.appendChild(quit);
       const bar = el("div", "progress");
       const fill = el("div", "progress-fill");
@@ -2182,7 +2306,10 @@
       prev.addEventListener("click", goPrev);
       const next = el("button", "btn btn-primary", i === cards.length - 1 ? "Finish" : "Next ›");
       const goNext = () => {
-        if (i === cards.length - 1) { grantXp(topic, cards.length, cards.length); renderTopic(topic); }
+        if (i === cards.length - 1) {
+          grantXp(topic, cards.length, cards.length);
+          goBack(() => renderTopic(topic));
+        }
         else { i++; flipped = false; render(); }
       };
       next.addEventListener("click", goNext);
@@ -2270,8 +2397,14 @@
   /* ------------------------------- Start ---------------------------------
    * Straight back into the last course you were studying; the picker only
    * fronts the app on a first visit (or if that course has gone away). */
-  let last = null;
-  try { last = localStorage.getItem(LANG_KEY); } catch (e) {}
-  if (last && KILI.byId(last)) switchLanguage(last);
-  else renderPicker(false);
+  const linked = parseHash(location.hash);
+  if (linked.v !== "picker") {
+    // Opened on a shared or bookmarked screen — go straight there.
+    switchLanguage(linked.lang, linked);
+  } else {
+    let last = null;
+    try { last = localStorage.getItem(LANG_KEY); } catch (e) {}
+    if (last && KILI.byId(last)) switchLanguage(last);
+    else renderPicker(false);
+  }
 })();

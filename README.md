@@ -72,6 +72,28 @@ current course's home screen — from a lesson, a topic, the progress page,
 anywhere. The **language chip on the right** always returns to the picker, so
 you're never more than one click from switching course or starting a new one.
 
+**Back and Forward work.** Every screen is a real entry in browser history, so
+the browser's Back button (and Android's) steps back through the app instead of
+leaving it, and Forward returns. The in-app `←` arrows step through the same
+history, so the two never disagree.
+
+**Every screen has a URL**, which means you can bookmark or share one:
+
+| URL | Screen |
+|-----|--------|
+| `#/` | the language picker |
+| `#/spanish` | that course's home |
+| `#/spanish/search` | word search |
+| `#/spanish/progress` | progress and mastery |
+| `#/spanish/account` | account & sync |
+| `#/spanish/t/food` | the Food & Drink topic |
+| `#/spanish/t/food/choice` | a multiple-choice session on it |
+
+Opening one of those directly loads the right course and goes straight to the
+screen. A practice session starts fresh when you arrive by Back, Forward or a
+link — its questions are drawn at random each time, so there is no half-finished
+session to restore.
+
 ## Themed per language
 
 Each course carries its own colour and ornament, drawn from where the language
