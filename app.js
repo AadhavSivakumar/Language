@@ -89,7 +89,7 @@
     // language's family of hues rather than one global set.
     const palette = KILI.paletteFor(lang);
     TOPICS = KILI.TOPIC_DEFS.filter(t =>
-      t.kind === "alpha" ? !!ALPHABET
+      t.kind === "alpha" ? alphabetGroups(course).length > 0
       : t.kind === "sentence" ? SENTENCES.length > 0
       : !!has[t.id]
     ).map((t, i) => Object.assign({}, t, {
@@ -100,29 +100,30 @@
     }));
 
     /* The writing system gets a section of its own on the home screen: the
-     * whole set, plus each of its two halves (vowels/consonants, hiragana/
-     * katakana, initials/tones — whatever the course calls them). Every
-     * language has one, so the section is always there. */
+     * whole set, then one card per part of it. Most courses split in two
+     * (vowels and consonants, hiragana and katakana), but a system can have
+     * as many parts as it needs — Chinese is initials, finals, tones and
+     * radicals. Every language has this section, so it is always there. */
     ALPHA_CARDS = [];
-    if (ALPHABET) {
-      const labels = course.alphabetLabels || ["Vowels", "Consonants"];
+    const groups = alphabetGroups(course);
+    if (groups.length) {
       const unit = course.alphabetUnit || "letters";   // "kana", "sounds", …
-      const whole = ALPHABET.vowels.concat(ALPHABET.consonants);
+      const whole = groups.reduce((a, g) => a.concat(g.items), []);
       const alphaTopic = TOPICS.filter(t => t.kind === "alpha")[0];
       if (alphaTopic) {
         ALPHA_CARDS.push(Object.assign({}, alphaTopic, {
           unit: unit, desc: whole.length + " " + unit + " · the whole set",
         }));
       }
-      [ALPHABET.vowels, ALPHABET.consonants].forEach((items, i) => {
-        if (!items || items.length < 3) return;
+      groups.forEach((g, i) => {
+        if (!g.items || g.items.length < 3) return;
         ALPHA_CARDS.push({
-          id: "alpha-" + i, title: labels[i] || labels[0],
-          icon: (items[0] && items[0].ta) || labels[i],
+          id: "alpha-" + i, title: g.label,
+          icon: (g.items[0] && g.items[0].ta) || g.label,
           color: palette[(i + 1) % palette.length].light,
           colorDark: palette[(i + 1) % palette.length].dark,
-          kind: "practice", pool: "custom", unit: unit, items,
-          desc: items.length + " to learn",
+          kind: "practice", pool: "custom", unit: g.unit || unit, items: g.items,
+          desc: g.items.length + " to learn",
         });
       });
       // The heading always says "alphabet"; the note carries the scale, and
@@ -167,6 +168,25 @@
     KILI.applyTheme(lang);
     pickVoice();
     setBrand();
+  }
+
+  /* The parts of a course's writing system, as [{label, items, unit}].
+   * A course may declare them directly as `alphabet.groups`, or in the older
+   * two-part shape (`alphabet.vowels` / `.consonants` with alphabetLabels),
+   * which every Latin-script course still uses. */
+  function alphabetGroups(course) {
+    const a = course.alphabet;
+    if (!a) return [];
+    if (a.groups) return a.groups.filter(g => g && g.items && g.items.length);
+    const labels = course.alphabetLabels || ["Vowels", "Consonants"];
+    return [
+      { label: labels[0], items: a.vowels || [] },
+      { label: labels[1] || labels[0], items: a.consonants || [] },
+    ].filter(g => g.items.length);
+  }
+  /* Every letter of the writing system, in order. */
+  function alphabetAll() {
+    return COURSE ? alphabetGroups(COURSE).reduce((a, g) => a.concat(g.items), []) : [];
   }
 
   /* Target-language text: written right-to-left for Arabic, and always in the
@@ -823,7 +843,7 @@
 
   /* --------------------------- Content helpers --------------------------- */
   function topicVocab(topicId) {
-    if (topicId === "alphabet") return ALPHABET.vowels.concat(ALPHABET.consonants);
+    if (topicId === "alphabet") return alphabetAll();
     // A word belongs to a topic if it was authored there, or if it's a
     // frequency-list word filed under that topic via `also`.
     return VOCAB.filter(v => v.topic === topicId || v.also === topicId);

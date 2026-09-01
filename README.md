@@ -13,8 +13,8 @@ course with its own progress, streak and spaced-repetition memory.
 | Language | Script | Words | Sentences | Verbs | Extras |
 |----------|--------|------:|----------:|------:|--------|
 | Tamil 🦜 | Tamil (with transliteration) | 1,326 | 103 | 20 | alphabet · 20 Tirukkuṟaḷ couplets |
-| Chinese 🀄 | Simplified characters + pinyin | 1,070 | 51 | 15 | pinyin & tones · 15 成语 |
-| Japanese 🎌 | Kanji + kana, with rōmaji | 1,064 | 51 | 15 | hiragana & katakana · 15 ことわざ |
+| Chinese 🀄 | Simplified characters + pinyin | 1,135 | 59 | 15 | pinyin, tones & radicals · culture · 15 成语 |
+| Japanese 🎌 | Kanji + kana, with rōmaji | 1,131 | 59 | 15 | kana & 80 kanji · culture · 15 ことわざ |
 | Arabic 🕌 | Arabic, right-to-left | 1,044 | 51 | 15 | the abjad · 15 أمثال |
 | French 🇫🇷 | Latin | 1,047 | 51 | 15 | alphabet & sounds · 15 proverbes |
 | Hindi 🪷 | Devanagari (with transliteration) | 1,041 | 51 | 15 | the varṇamālā · 15 कहावतें |
@@ -24,8 +24,8 @@ course with its own progress, streak and spaced-repetition memory.
 | Italian 🇮🇹 | Latin | 1,029 | 51 | 15 | alphabet & sounds · 15 proverbi |
 | English 📘 | Latin | 1,029 | 51 | 15 | a vocabulary builder with plain-English definitions |
 
-Every course has the same **24 topics**, so the app works identically whichever
-one you're studying and a topic you've mastered in one language is easy to find
+Every course has the same **24 topics** (Chinese and Japanese add a 25th, below),
+so the app works identically whichever one you're studying and a topic you've mastered in one language is easy to find
 in the next. Each verb is conjugated across past, present and future for every
 person — around 230 forms per course.
 
@@ -34,24 +34,47 @@ pronunciation or transliteration line, and the English meaning. In the English
 course the third line is a plain-English definition instead, which is what a
 vocabulary builder actually needs.
 
+## Culture, where a course has it
+
+Some of what you need in order to follow a conversation isn't vocabulary in the
+ordinary sense — it's knowing what 面子 costs to lose, why the chopsticks must
+not stand upright in the rice, or what someone means by 空気を読む. Chinese and
+Japanese each carry a **Culture & Customs** topic covering festivals, etiquette,
+the arts, and the ideas that don't translate:
+
+| | Covers |
+|---|---|
+| Chinese · 文化 · 50 words | Spring Festival and the red envelope, Mid-Autumn and the mooncake, the zodiac and your 本命年, 面子 and 关系, tea and calligraphy, 太极 and 围棋, why the host insists on paying |
+| Japanese · 文化 · 58 words | お正月 and お年玉, 花見 and 紅葉狩り, bowing and 敬語, 本音 against 建前, もったいない and 侘び寂び, the tea ceremony, the bath before the bath, why you bring back お土産 |
+
+Both also have culture-specific sentences — the modest phrase you say when
+handing over a gift, the exchange as you leave the office before your colleagues.
+
+The topic is part of the shared spine, so any course can join in simply by
+filing words under `culture`; the card only appears where there are words for it.
+
 ## The alphabet, in every language
 
 Every course opens with its writing system, as a section of its own above the
-topics — never buried in the grid. Three cards: the whole set, and each of its
-two halves, drillable with flashcards, matching, listening, typing and speech.
+topics — never buried in the grid: one card for the whole set and one for each
+part of it, drillable with flashcards, matching, listening, typing and speech.
+Most systems split in two, but a system has as many parts as it needs — Chinese
+is four and Japanese three.
 
 | Course | Section | Halves |
 |--------|---------|--------|
 | Tamil | Alphabet · 37 letters | uyir (vowels, with āytam) · mey (consonants, with the grantha letters) |
-| Chinese | Pinyin & tones · 67 sounds | 21 initials + 36 finals · the five tones and how they shift |
-| Japanese | Hiragana & katakana · 92 kana | hiragana · katakana |
+| Chinese | Pinyin, tones & radicals · 97 | 21 initials · 36 finals · 5 tones · 30 radicals, each with characters that use it |
+| Japanese | Kana & kanji · 172 | hiragana · katakana · 80 kanji with both readings and a word that uses them |
 | Hindi | Devanagari · 56 letters | svar with their mātrās · vyañjan, including the conjuncts and borrowed letters |
 | Arabic | The abjad · 38 letters | the 28 letters · the vowel marks, shadda, sun letters |
 | Spanish, French, German, Italian, Portuguese, English | Alphabet & sounds | the letters with their names · the digraphs and spellings that don't say what they look like |
 
 Chinese and Japanese have no alphabet in the strict sense, so they get the
-thing that actually does the job: the full pinyin sound system for Chinese,
-both kana syllabaries for Japanese.
+things that actually do the job. For Chinese that is the full pinyin sound
+system *and* the thirty commonest radicals — you can't sound a character out,
+but you can learn to read its parts. For Japanese it is both kana syllabaries
+plus eighty kanji, each with its on-yomi and kun-yomi and a word that uses it.
 
 ## No question has two right answers
 
