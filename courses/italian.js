@@ -1284,6 +1284,7 @@
     sentences: SENTENCES,
     conjugation: CONJUGATION,
     practiceIcons: {
+      today: "Oggi", weak: "Difficili",
       review: "Ripasso", vocab: "Parole", sentence: "Frasi", conjugation: "Verbi",
       listening: "Ascolto", mixed: "Misto", reading: "Proverbi",
     },

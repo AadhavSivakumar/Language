@@ -1239,6 +1239,7 @@
     sentences: SENTENCES,
     conjugation: CONJUGATION,
     practiceIcons: {
+      today: "اليَوْم", weak: "صَعْب",
       review: "مُراجَعة", vocab: "كَلِمات", sentence: "جُمَل", conjugation: "أَفْعال",
       listening: "اِسْتِماع", mixed: "مُنَوَّع", reading: "أَمْثال",
     },

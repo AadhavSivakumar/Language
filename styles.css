@@ -828,3 +828,20 @@ kbd {
    letterform is the subject rather than a label. */
 .alpha-grid { grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); }
 .alpha-grid .topic-icon { font-size: 24px; line-height: 1.2; }
+
+/* ------------------------- Dictation & mastery ---------------------------- */
+/* The hint under a dictation prompt: the meaning, small, so the ear does the
+   work and the eye only confirms. */
+.dictate-hint { text-align: center; margin: -6px 0 14px; }
+
+/* On the back of a flashcard: how well the SRS thinks you know it. */
+.flash-mastery {
+  margin-top: 14px; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .1em;
+  padding: 4px 10px; border-radius: 100px; display: inline-block;
+  border: 1px solid var(--line); color: var(--muted);
+}
+.flash-mastery.known { color: var(--ok); border-color: var(--ok); }
+.flash-mastery.weak { color: var(--bad); border-color: var(--bad); }
+.flash-mastery.learning { color: var(--accent); border-color: var(--accent); }
+.flash-mastery.new { color: var(--muted); }

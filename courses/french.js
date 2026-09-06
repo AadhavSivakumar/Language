@@ -1249,6 +1249,7 @@
     sentences: SENTENCES,
     conjugation: CONJUGATION,
     practiceIcons: {
+      today: "Aujourd'hui", weak: "Difficiles",
       review: "Révision", vocab: "Mots", sentence: "Phrases", conjugation: "Verbes",
       listening: "Écoute", mixed: "Mélange", reading: "Proverbes",
     },

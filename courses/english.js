@@ -1630,6 +1630,7 @@
     sentences: SENTENCES,
     conjugation: CONJUGATION,
     practiceIcons: {
+      today: "Today", weak: "Tricky",
       review: "Review", vocab: "Words", sentence: "Sentences", conjugation: "Verbs",
       listening: "Listening", mixed: "Mixed", reading: "Sayings",
     },

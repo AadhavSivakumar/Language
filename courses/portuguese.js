@@ -1291,6 +1291,7 @@
     sentences: SENTENCES,
     conjugation: CONJUGATION,
     practiceIcons: {
+      today: "Hoje", weak: "Difíceis",
       review: "Revisão", vocab: "Palavras", sentence: "Frases", conjugation: "Verbos",
       listening: "Escuta", mixed: "Mistura", reading: "Provérbios",
     },

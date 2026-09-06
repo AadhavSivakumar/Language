@@ -12,9 +12,9 @@ course with its own progress, streak and spaced-repetition memory.
 
 | Language | Script | Words | Sentences | Verbs | Extras |
 |----------|--------|------:|----------:|------:|--------|
-| Tamil 🦜 | Tamil (with transliteration) | 1,326 | 103 | 20 | alphabet · 20 Tirukkuṟaḷ couplets |
+| Tamil 🦜 | Tamil (with transliteration) | 1,422 | 103 | 20 | the full script incl. 216 uyirmei · culture · spoken vs written · 20 Tirukkuṟaḷ couplets |
 | Chinese 🀄 | Simplified characters + pinyin | 1,135 | 59 | 15 | pinyin, tones & radicals · culture · 15 成语 |
-| Japanese 🎌 | Kanji + kana, with rōmaji | 1,131 | 59 | 15 | kana & 80 kanji · culture · 15 ことわざ |
+| Japanese 🎌 | Kanji + kana, with rōmaji | 1,169 | 59 | 15 | kana & 80 kanji · culture · casual vs polite · 15 ことわざ |
 | Arabic 🕌 | Arabic, right-to-left | 1,044 | 51 | 15 | the abjad · 15 أمثال |
 | French 🇫🇷 | Latin | 1,047 | 51 | 15 | alphabet & sounds · 15 proverbes |
 | Hindi 🪷 | Devanagari (with transliteration) | 1,041 | 51 | 15 | the varṇamālā · 15 कहावतें |
@@ -34,6 +34,31 @@ pronunciation or transliteration line, and the English meaning. In the English
 course the third line is a plain-English definition instead, which is what a
 vocabulary builder actually needs.
 
+## How a day of practice works
+
+**Today's lesson** is the one-tap session on every course home: whatever the
+spaced-repetition memory says is due, asked in varied forms so it isn't ten
+identical questions; then a few words you've never met, from the topic you know
+least; then a sentence to build and one with a gap in it. Everything scores into
+the same memory as any other practice.
+
+**Weak words** is the track for what you keep missing — anything the memory has
+seen you lapse on twice, worst first — with dictation among its modes, because
+the words you can't produce are the ones that need it.
+
+Two modes were added to every topic:
+
+- **Fill the gap** blanks one word of a sentence and offers four. Because the
+  gap falls on small words as often as big ones, this is the exercise that
+  finally teaches Tamil case endings, Japanese particles and Chinese measure
+  words — the parts a vocabulary list never reaches.
+- **Dictation** plays the word and asks you to write it, script or
+  transliteration, with only the meaning as a hint. It is the hardest drill for
+  a new script and the one that makes it stick.
+
+Session length (10, 15 or 20 questions) is a setting on the progress screen, and
+the back of every flashcard now says how well the memory thinks you know it.
+
 ## Culture, where a course has it
 
 Some of what you need in order to follow a conversation isn't vocabulary in the
@@ -45,9 +70,17 @@ the arts, and the ideas that don't translate:
 | | Covers |
 |---|---|
 | Chinese · 文化 · 50 words | Spring Festival and the red envelope, Mid-Autumn and the mooncake, the zodiac and your 本命年, 面子 and 关系, tea and calligraphy, 太极 and 围棋, why the host insists on paying |
+| Tamil · பண்பாடு · 50 words | Pongal and Deepavali, the kolam at the threshold, kumkum and jasmine, the banana leaf and filter coffee, Bharatanatyam and Carnatic music, jallikkattu, the Kural, and the difference between செந்தமிழ் and கொடுந்தமிழ் |
 | Japanese · 文化 · 58 words | お正月 and お年玉, 花見 and 紅葉狩り, bowing and 敬語, 本音 against 建前, もったいない and 侘び寂び, the tea ceremony, the bath before the bath, why you bring back お土産 |
 
-Both also have culture-specific sentences — the modest phrase you say when
+**Spoken vs Written** is a companion topic for the two languages where the
+gap is widest. Tamil is diglossic — what a book prints (இருக்கிறேன்) and what a
+person says (இருக்கேன்) differ in almost every verb — so 46 entries give the
+spoken form with the written one it stands in for. Japanese textbooks teach the
+polite -masu forms that friends never use; 38 entries give the casual forms,
+the suffixes (〜さん, 〜くん, 〜ちゃん, 〜様) and the slang.
+
+Chinese and Japanese also have culture-specific sentences — the modest phrase you say when
 handing over a gift, the exchange as you leave the office before your colleagues.
 
 The topic is part of the shared spine, so any course can join in simply by
@@ -63,7 +96,7 @@ is four and Japanese three.
 
 | Course | Section | Halves |
 |--------|---------|--------|
-| Tamil | Alphabet · 37 letters | uyir (vowels, with āytam) · mey (consonants, with the grantha letters) |
+| Tamil | The Tamil script · 266 | uyir · mey · **all 216 uyirmei compound letters**, generated so the pairing is exact · the 13 Tamil numerals |
 | Chinese | Pinyin, tones & radicals · 97 | 21 initials · 36 finals · 5 tones · 30 radicals, each with characters that use it |
 | Japanese | Kana & kanji · 172 | hiragana · katakana · 80 kanji with both readings and a word that uses them |
 | Hindi | Devanagari · 56 letters | svar with their mātrās · vyañjan, including the conjuncts and borrowed letters |

@@ -137,8 +137,12 @@
     const pc = (n) => palette[n % palette.length].light;
     const pcd = (n) => palette[n % palette.length].dark;
     PRACTICE = [
+      { id: "prac-today", title: "Today's lesson", icon: pi.today || "Today", color: pc(0), colorDark: pcd(0),
+        kind: "practice", pool: "today", desc: "One tap: what's due, a few new words, a sentence" },
       { id: "prac-review", title: "Review", icon: pi.review || "Review", color: pc(1), colorDark: pcd(1),
         kind: "practice", pool: "review", desc: "Spaced repetition — your words that are due" },
+      { id: "prac-weak", title: "Weak words", icon: pi.weak || "Weak", color: pc(2), colorDark: pcd(2),
+        kind: "practice", pool: "weak", desc: "The words you keep getting wrong" },
       { id: "prac-vocab", title: "Vocabulary", icon: pi.vocab || "Words", color: pc(3), colorDark: pcd(3),
         kind: "practice", pool: "vocab", desc: "Mixed word practice from every topic" },
       { id: "prac-sentence", title: "Sentences", icon: pi.sentence || "Sentences", color: pc(0), colorDark: pcd(0),
@@ -262,6 +266,37 @@
     if (due.length < 8) due.push(...shuffle(fresh).slice(0, 8 - due.length));
     return due;
   }
+  /* Words you keep missing: two or more lapses, or a lapse with no recovery
+   * yet. Sorted worst-first. Topped up with due words so the track is never
+   * too short to make a session. */
+  function weakItems() {
+    const seen = new Set(), weak = [];
+    for (const it of VOCAB.concat(SENTENCES)) {
+      const k = wkey(it);
+      if (seen.has(k)) continue; seen.add(k);
+      const e = state.srs[k];
+      if (!e) continue;
+      if (e.lapses >= 2 || (e.lapses >= 1 && e.reps < 2)) weak.push({ it, e });
+    }
+    weak.sort((a, b) => (b.e.lapses - a.e.lapses) || (a.e.ease - b.e.ease));
+    return weak.map(w => w.it);
+  }
+  function weakCount() { return weakItems().length; }
+  function weakPool() {
+    const w = weakItems();
+    if (w.length >= 4) return w;
+    const seen = new Set(w.map(wkey));
+    return w.concat(dueItems().filter(it => !seen.has(wkey(it))).slice(0, 8 - w.length));
+  }
+  /* How well a word is known, for the little badge on a flashcard. */
+  function masteryOf(item) {
+    const e = state.srs[wkey(item)];
+    if (!e) return { label: "New", cls: "new" };
+    if (e.reps >= 2 && e.lapses <= 1) return { label: "Known · " + e.reps + (e.reps === 1 ? " rep" : " reps"), cls: "known" };
+    if (e.lapses >= 2) return { label: "Tricky · missed " + e.lapses + "×", cls: "weak" };
+    return { label: "Learning · " + e.reps + (e.reps === 1 ? " rep" : " reps"), cls: "learning" };
+  }
+
   // A word counts as "learned" once it has two or more successful reps.
   function topicMastery(topicId) {
     const items = topicVocab(topicId);
@@ -879,6 +914,8 @@
       if (topic.pool === "conjugation") return conjugationForms();
       if (topic.pool === "reading") return READING ? READING.items : [];
       if (topic.pool === "review") return dueItems();
+      if (topic.pool === "weak") return weakPool();
+      if (topic.pool === "today") return VOCAB;
       if (topic.pool === "custom") return topic.items || [];
       // "mixed" and "listening" draw on everything that has ta/tr/en.
       if (topic.pool === "mixed" || topic.pool === "listening")
@@ -899,6 +936,8 @@
       if (topic.pool === "reading")
         return READING ? READING.items.length + " " + (READING.unit || "texts") : "";
       if (topic.pool === "review") { const d = dueCount(); return d ? d + " due" : "all caught up"; }
+      if (topic.pool === "weak") { const n = weakCount(); return n ? n + " to work on" : "nothing weak yet"; }
+      if (topic.pool === "today") { const d = dueCount(); return (d ? d + " due · " : "") + "about " + maxQ() + " questions"; }
       if (topic.pool === "custom")
         return (topic.items || []).length + " " + (topic.unit || "words");
       if (topic.pool === "mixed" || topic.pool === "listening")
@@ -913,22 +952,26 @@
   }
   function modesFor(topic) {
     if (topic.kind === "practice") {
+      if (topic.pool === "today") return ["today"];
+      if (topic.pool === "weak") return ["choice", "type", "dictate", "listen", "flash"];
       if (topic.pool === "sentence")
-        return ["translate", "en2ta", "smatch", "build", "stype", "slisten", "flash"];
+        return ["translate", "en2ta", "smatch", "cloze", "build", "stype", "slisten", "flash"];
       if (topic.pool === "conjugation") return ["conjugate", "type", "flash"];
       if (topic.pool === "reading") return ["kread", "translate", "kline", "smatch", "flash"];
       if (topic.pool === "listening") return ["listen", "slisten", "flash"];
       if (topic.pool === "custom")
-        return ["flash", "choice", "match", "type", "listen", "speak"];
+        return ["flash", "choice", "match", "type", "dictate", "listen", "speak"];
       if (topic.pool === "review")
-        return ["choice", "type", "listen", "speak", "flash"];
-      return ["choice", "match", "type", "listen", "speak", "flash"];
+        return ["choice", "type", "dictate", "listen", "speak", "flash"];
+      return ["choice", "match", "type", "dictate", "listen", "speak", "flash"];
     }
     if (topic.kind === "sentence") {
-      return ["translate", "en2ta", "smatch", "build", "stype", "slisten", "flash"];
+      return ["translate", "en2ta", "smatch", "cloze", "build", "stype", "slisten", "flash"];
     }
-    const m = ["flash", "choice", "match", "type", "listen", "speak"];
-    if (topicSentences(topic.id).length >= 2) m.push("build");
+    const m = ["flash", "choice", "match", "type", "dictate", "listen", "speak"];
+    const ts = topicSentences(topic.id);
+    if (ts.length >= 2) m.push("build");
+    if (ts.some(clozeable)) m.push("cloze");
     return m;
   }
   function modeMeta(mode) {
@@ -949,6 +992,9 @@
       slisten:   { title: "Sentence listening", desc: "Hear a sentence, choose the meaning" },
       kread:     { title: "Read", desc: "Browse " + (reading.unit || "the texts") + " with meanings" },
       kline:     { title: "Complete the couplet", desc: "Given line one, pick line two" },
+      cloze:     { title: "Fill the gap", desc: "One word is missing — which is it?" },
+      dictate:   { title: "Dictation", desc: "Hear it, write it — no text to lean on" },
+      today:     { title: "Start today's lesson", desc: "Reviews, new words and a sentence, mixed" },
     })[mode];
   }
 
@@ -992,19 +1038,18 @@
     wrap.appendChild(stats);
 
     /* -- one clear next action -- */
-    const review = PRACTICE.filter(p => p.pool === "review")[0];
-    if (review) {
+    const todayTrack = PRACTICE.filter(p => p.pool === "today")[0];
+    if (todayTrack) {
       const cta = el("button", "home-cta");
       cta.type = "button";
       const ctaText = el("div", "home-cta-text");
-      ctaText.appendChild(el("div", "home-cta-title",
-        due ? "Review " + due + (due === 1 ? " word" : " words") : "Start learning"));
+      ctaText.appendChild(el("div", "home-cta-title", "Today's lesson"));
       ctaText.appendChild(el("div", "home-cta-sub",
-        due ? "Spaced repetition — the words you're due to see again"
-            : "Nothing due right now — meet some new words instead"));
+        (due ? due + (due === 1 ? " word" : " words") + " due for review, " : "Nothing due, so ") +
+        "a few new words, and a sentence — about " + maxQ() + " questions"));
       cta.appendChild(ctaText);
       cta.appendChild(el("span", "home-cta-go", "→"));
-      cta.addEventListener("click", () => renderTopic(review));
+      cta.addEventListener("click", () => startMode(todayTrack, "today", "all"));
       wrap.appendChild(cta);
     }
 
@@ -1247,6 +1292,19 @@
     goalRow.appendChild(goalCtl);
     wrap.appendChild(goalRow);
 
+    // Session length.
+    wrap.appendChild(el("h2", "section-title", "Session length"));
+    const lenRow = el("div", "level-row");
+    SESSION_LENGTHS.forEach(n => {
+      const b = el("button", "level-chip" + (n === maxQ() ? " on" : ""), n + " questions");
+      b.type = "button";
+      b.addEventListener("click", () => { state.sessionLen = n; save(); renderProgress(); });
+      lenRow.appendChild(b);
+    });
+    wrap.appendChild(lenRow);
+    wrap.appendChild(el("p", "level-note",
+      "How many questions a practice session asks. Today's lesson uses the same number."));
+
     // Streak calendar — last 14 days.
     wrap.appendChild(el("h2", "section-title", state.streak + "-day streak"));
     const cal = el("div", "cal");
@@ -1443,7 +1501,9 @@
   }
 
   /* =========================== EXERCISE GENERATION ====================== */
-  const MAX_Q = 10;
+  /* Questions per session. A setting on the progress screen; 10 by default. */
+  const SESSION_LENGTHS = [10, 15, 20];
+  const maxQ = () => (state && SESSION_LENGTHS.indexOf(state.sessionLen) >= 0 ? state.sessionLen : 10);
 
   /* Wrong-meaning options. Exact string difference isn't enough: "short" and
    * "short / low" share a sense, so offering both makes two options right. */
@@ -1471,8 +1531,8 @@
     return A.some(x => B.indexOf(x) >= 0);
   }
 
-  function genChoice(pool) {
-    const items = sample(pool, Math.min(MAX_Q, pool.length));
+  function genChoice(pool, subjects) {
+    const items = subjects || sample(pool, Math.min(maxQ(), pool.length));
     return items.map(item => {
       const ta2en = Math.random() < 0.5 || pool.length < 4;
       if (ta2en) {
@@ -1512,8 +1572,8 @@
       pairs: items.slice(0, 4).map(x => ({ ta: x.ta, tr: x.tr, en: x.en })) }];
   }
 
-  function genType(pool) {
-    const items = sample(pool, Math.min(MAX_Q, pool.length));
+  function genType(pool, subjects) {
+    const items = subjects || sample(pool, Math.min(maxQ(), pool.length));
     return items.map(item => {
       const ta2en = Math.random() < 0.5;
       if (ta2en) {
@@ -1529,8 +1589,8 @@
     });
   }
 
-  function genListen(pool) {
-    const items = sample(pool, Math.min(MAX_Q, pool.length));
+  function genListen(pool, subjects) {
+    const items = subjects || sample(pool, Math.min(maxQ(), pool.length));
     return items.map(item => ({
       type: "listen", audio: item.ta, tr: item.tr, key: wkey(item),
       choices: shuffle([item.en].concat(distractorsEn(pool, item.en, 3))),
@@ -1539,14 +1599,14 @@
   }
 
   function genSpeak(pool) {
-    const items = sample(pool, Math.min(MAX_Q, pool.length));
+    const items = sample(pool, Math.min(maxQ(), pool.length));
     return items.map(item => ({
       type: "speak", ta: item.ta, tr: item.tr, en: item.en, key: wkey(item),
     }));
   }
 
   function genBuild(sentences) {
-    const items = sample(sentences, Math.min(MAX_Q, sentences.length));
+    const items = sample(sentences, Math.min(maxQ(), sentences.length));
     // global token bank for distractors
     const bank = [];
     sentences.forEach(s => s.words.forEach(w => bank.push(w)));
@@ -1566,7 +1626,7 @@
   }
 
   function genTranslate(sentences) {
-    const items = sample(sentences, Math.min(MAX_Q, sentences.length));
+    const items = sample(sentences, Math.min(maxQ(), sentences.length));
     return items.map(s => {
       const others = shuffle(sentences.filter(x => x.en !== s.en)).slice(0, 3).map(x => x.en);
       return { type: "select", prompt: s.ta, promptSub: s.tr, key: wkey(s),
@@ -1577,7 +1637,7 @@
 
   // English → target: read the English sentence, choose the right one back.
   function genEn2Ta(sentences) {
-    const items = sample(sentences, Math.min(MAX_Q, sentences.length));
+    const items = sample(sentences, Math.min(maxQ(), sentences.length));
     return items.map(s => {
       const others = shuffle(sentences.filter(x =>
         x.ta !== s.ta && !sameMeaning(x.en, s.en))).slice(0, 3);
@@ -1592,7 +1652,7 @@
 
   // Type the whole sentence out (script or transliteration both accepted).
   function genSentenceType(sentences) {
-    const items = sample(sentences, Math.min(MAX_Q, sentences.length));
+    const items = sample(sentences, Math.min(maxQ(), sentences.length));
     return items.map(s => ({
       type: "type", prompt: s.en, promptSub: "", key: wkey(s),
       ask: "Type this sentence in " + LN() + " (" + TRN() + " is fine)",
@@ -1604,7 +1664,7 @@
   function genReadingLine(texts) {
     const usable = texts.filter(k => k.l1 && k.l2);
     if (usable.length < 4) return [];
-    const items = sample(usable, Math.min(MAX_Q, usable.length));
+    const items = sample(usable, Math.min(maxQ(), usable.length));
     return items.map(k => {
       const others = shuffle(usable.filter(x => x.l2 !== k.l2)).slice(0, 3);
       const all = [k].concat(others);
@@ -1623,7 +1683,7 @@
     if (!usable.length) return [];
     const order = shuffle(usable);
     const items = [];
-    for (let i = 0; i < MAX_Q; i++) {
+    for (let i = 0; i < maxQ(); i++) {
       const t = order[i % order.length];
       const form = t.forms[Math.floor(Math.random() * t.forms.length)];
       const others = shuffle(t.forms.filter(f => f.ta !== form.ta)).slice(0, 3);
@@ -1637,11 +1697,105 @@
     return items;
   }
   function genConjugateType(forms) {
-    const items = sample(forms, Math.min(MAX_Q, forms.length));
+    const items = sample(forms, Math.min(maxQ(), forms.length));
     return items.map(f => ({ type: "type", prompt: f.en, promptSub: "", key: wkey(f),
       ask: "Type it in " + LN() + " (" + TRN() + " is fine)", accept: [f.ta, f.tr, fold(f.tr)] }));
   }
 
+  /* Fill the gap: one word of a sentence is blanked, and you pick it from
+   * four. This is the exercise that teaches the small words — Tamil case
+   * endings, Japanese particles, Chinese measure words — because those are
+   * exactly what the gap tends to fall on. Distractors come from the other
+   * sentences' tokens, never from the same sentence. */
+  function genCloze(sentences) {
+    const usable = sentences.filter(clozeable);
+    if (!usable.length) return [];
+    const items = sample(usable, Math.min(maxQ(), usable.length));
+    // Distractors come from every sentence in the course, not just this
+    // topic's few — a two-sentence topic would otherwise have nothing to
+    // offer, and the wrong answers would all be from the same breath.
+    const bank = [];
+    SENTENCES.forEach(x => (x.words || []).forEach(w => bank.push(w)));
+    return items.map(x => {
+      const i = Math.floor(Math.random() * x.words.length);
+      const gap = x.words[i];
+      // Scripts that don't space between words shouldn't gain spaces here.
+      const joiner = /\s/.test(x.ta) ? " " : "";
+      const shown = x.words.map((w, j) => (j === i ? "＿＿" : w.ta)).join(joiner);
+      const inSentence = new Set(x.words.map(w => w.ta));
+      const others = [];
+      for (const w of shuffle(bank)) {
+        if (inSentence.has(w.ta) || others.some(o => o.ta === w.ta)) continue;
+        others.push(w);
+        if (others.length === 3) break;
+      }
+      const choices = shuffle([gap].concat(others));
+      const subFor = {}; choices.forEach(c => subFor[c.ta] = c.tr);
+      return { type: "select", prompt: shown, promptSub: x.en, promptTarget: true,
+               choicesTarget: true, silent: true, key: wkey(x),
+               ask: "Which word fills the gap?",
+               choices: choices.map(c => c.ta), answer: gap.ta, subFor };
+    });
+  }
+
+  // A sentence can take a gap if it has at least two tokens to choose between.
+  const clozeable = (x) => !!(x.words && x.words.length >= 2);
+
+  /* Dictation: hear the word, write it. The hardest and most useful drill
+   * for a new script — you can't lean on recognising the shape. */
+  function genDictation(pool) {
+    const items = sample(pool, Math.min(maxQ(), pool.length));
+    return items.map(item => ({
+      type: "type", dictate: true, audio: item.ta, tr: item.tr, prompt: "",
+      promptSub: item.en, key: wkey(item),
+      ask: "Type what you hear (" + TRN() + " is fine)",
+      accept: [item.ta, item.tr, fold(item.tr)],
+    }));
+  }
+
+  /* Today's lesson: one tap, a mixed session. What's due for review first,
+   * in varied forms so it isn't ten identical questions; then a few words
+   * you've never seen, from the topic you know least; then a sentence or two.
+   * Everything scores into the SRS as usual. */
+  function genToday() {
+    const n = maxQ();
+    const today = todayStr();
+    const due = [], fresh = [];
+    const seen = new Set();
+    for (const it of VOCAB) {
+      const k = wkey(it);
+      if (seen.has(k)) continue; seen.add(k);
+      const e = state.srs[k];
+      if (isDue(e, today)) due.push(it); else if (!e) fresh.push(it);
+    }
+    // New words from the least-mastered topic that still has unseen words.
+    const byTopic = {};
+    fresh.forEach(it => { (byTopic[it.topic] = byTopic[it.topic] || []).push(it); });
+    const order = TOPICS.filter(t => t.kind === "vocab" && byTopic[t.id])
+      .map(t => { const m = topicMastery(t.id); return { t, r: m.total ? m.learned / m.total : 0 }; })
+      .sort((a, b) => a.r - b.r);
+    const newWords = order.length ? byTopic[order[0].t.id].slice(0, Math.max(2, Math.round(n * 0.3))) : [];
+
+    const reviewN = Math.max(0, n - newWords.length - 2);
+    const reviews = shuffle(due).slice(0, reviewN);
+    const queue = [];
+    // Vary the form: choice, type, listen, round-robin, over the whole pool
+    // so distractors are drawn from everything and not just the due list.
+    const forms = [genChoice, genType, genListen];
+    reviews.forEach((it, i) => {
+      const ex = forms[i % forms.length](VOCAB, [it])[0];
+      if (ex) queue.push(ex);
+    });
+    newWords.forEach(it => {
+      const ex = genChoice(VOCAB, [it])[0];
+      if (ex) queue.push(ex);
+    });
+    if (SENTENCES.length >= 2) {
+      const cloze = genCloze(SENTENCES)[0]; if (cloze) queue.push(cloze);
+      const build = genBuild(SENTENCES)[0]; if (build) queue.push(build);
+    }
+    return shuffle(queue);
+  }
   /* Strip diacritics so a plain-ASCII spelling is accepted when typing —
    * "nanri" for "naṉṟi", "manana" for "mañana", "schon" for "schön". The
    * language's own rules run first (ß→ss, ü→ue, ḻ→zh …), then the generic
@@ -1681,6 +1835,9 @@
     else if (mode === "slisten")   queue = genListen(topic.pool === "listening" ? vpool : spool);
     else if (mode === "kline")     queue = genReadingLine(READING ? READING.items : []);
     else if (mode === "conjugate") queue = genConjugate(CONJUGATION);
+    else if (mode === "cloze")     queue = genCloze(spool);
+    else if (mode === "dictate")   queue = genDictation(vpool);
+    else if (mode === "today")     queue = genToday();
 
     if (!queue.length) { alert("Not enough content for this mode yet."); return; }
 
@@ -1779,7 +1936,7 @@
       prompt.appendChild(pmain);
       if (ex.promptSub) prompt.appendChild(el("div", "prompt-sub", ex.promptSub));
       body.appendChild(prompt);
-      if (promptIsTarget) speak(ex.prompt);
+      if (promptIsTarget && !ex.silent) speak(ex.prompt);
 
       let selected = null;
       const choicesAreTarget = ex.choicesTarget != null ? ex.choicesTarget : false;
@@ -1991,15 +2148,34 @@
     lessonChrome(session, (body) => {
       body.appendChild(el("h2", "ex-title", ex.ask || "Type the answer"));
       const promptIsTarget = ex.promptTarget != null ? ex.promptTarget : isTarget(ex.prompt);
-      const prompt = el("div", "prompt-card");
-      const pmain = el("div", "prompt-main");
-      pmain.appendChild(promptIsTarget ? targetSpan("prompt-text", ex.prompt)
-                                       : el("span", "prompt-text", ex.prompt));
-      if (promptIsTarget) pmain.appendChild(speaker(ex.prompt));
-      prompt.appendChild(pmain);
-      if (ex.promptSub) prompt.appendChild(el("div", "prompt-sub", ex.promptSub));
-      body.appendChild(prompt);
-      if (promptIsTarget) speak(ex.prompt);
+      if (ex.dictate) {
+        // Nothing to read — a play button, the meaning as a hint, and the
+        // transliteration only if this device has no voice to speak with.
+        const big = el("div", "listen-card");
+        const play = el("button", "listen-play");
+        play.type = "button";
+        play.innerHTML =
+          '<svg viewBox="0 0 24 24" width="30" height="30" aria-hidden="true">' +
+          '<path d="M4 9.5h3.2L12 5v14l-4.8-4.5H4z" fill="currentColor"/>' +
+          '<path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" ' +
+          'stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+        play.addEventListener("click", () => speak(ex.audio));
+        big.appendChild(play);
+        if (!taVoice) big.appendChild(el("div", "listen-tr", ex.tr));
+        body.appendChild(big);
+        if (ex.promptSub) body.appendChild(el("div", "prompt-sub dictate-hint", "meaning: " + ex.promptSub));
+        speak(ex.audio);
+      } else {
+        const prompt = el("div", "prompt-card");
+        const pmain = el("div", "prompt-main");
+        pmain.appendChild(promptIsTarget ? targetSpan("prompt-text", ex.prompt)
+                                         : el("span", "prompt-text", ex.prompt));
+        if (promptIsTarget) pmain.appendChild(speaker(ex.prompt));
+        prompt.appendChild(pmain);
+        if (ex.promptSub) prompt.appendChild(el("div", "prompt-sub", ex.promptSub));
+        body.appendChild(prompt);
+        if (promptIsTarget) speak(ex.prompt);
+      }
 
       const input = el("input", "type-input");
       input.type = "text"; input.autocapitalize = "off"; input.autocomplete = "off";
@@ -2314,6 +2490,8 @@
       const backFace = el("div", "flash-face flash-back");
       backFace.appendChild(el("div", "flash-tr", card.tr));
       backFace.appendChild(el("div", "flash-en", card.en));
+      const m = masteryOf(card);
+      backFace.appendChild(el("div", "flash-mastery " + m.cls, m.label));
       cardEl.appendChild(front); cardEl.appendChild(backFace);
       cardEl.addEventListener("click", () => { flipped = !flipped; render(); });
       body.appendChild(cardEl);

@@ -1307,6 +1307,7 @@
     sentences: SENTENCES,
     conjugation: CONJUGATION,
     practiceIcons: {
+      today: "Heute", weak: "Schwer",
       review: "Wiederholung", vocab: "Wörter", sentence: "Sätze", conjugation: "Verben",
       listening: "Hören", mixed: "Gemischt", reading: "Sprichwörter",
     },

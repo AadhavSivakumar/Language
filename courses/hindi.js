@@ -1232,6 +1232,7 @@
     sentences: SENTENCES,
     conjugation: CONJUGATION,
     practiceIcons: {
+      today: "आज", weak: "कमज़ोर",
       review: "दोहराव", vocab: "शब्द", sentence: "वाक्य", conjugation: "क्रिया",
       listening: "सुनना", mixed: "मिश्रित", reading: "कहावतें",
     },

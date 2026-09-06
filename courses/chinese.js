@@ -1346,6 +1346,7 @@
     sentences: SENTENCES,
     conjugation: CONJUGATION,
     practiceIcons: {
+      today: "今天", weak: "难点",
       review: "复习", vocab: "生词", sentence: "句子", conjugation: "动词",
       listening: "听力", mixed: "综合", reading: "成语",
     },

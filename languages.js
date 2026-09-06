@@ -448,6 +448,9 @@
        ideas you need in order to follow a conversation, not just parse it.
        A course joins in simply by having words filed under "culture". */
     { id: "culture",    title: "Culture & Customs",  color: "#a85a44", kind: "vocab" },
+    /* The gap between the language as written and as spoken — Tamil's
+       diglossia, Japanese casual against polite. Again, only where filed. */
+    { id: "spoken",     title: "Spoken vs Written",  color: "#5f6b70", kind: "vocab" },
     { id: "sentences",  title: "Sentences",          color: "#8c6d3f", kind: "sentence" },
   ];
 

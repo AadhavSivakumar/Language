@@ -55,9 +55,40 @@ const CONSONANTS = [
   ["க்ஷ்","kṣ","grantha — ksha"],
   ["ஶ்","ś","grantha — palatal sh"],
 ];
+/* The uyirmei: every one of the 18 mey joined to every one of the 12 uyir.
+ * These 216 are what Tamil is actually written in — the bare vowels and
+ * consonants above are the parts, these are the letters — and being able to
+ * read them at a glance is the whole difference between sounding Tamil out
+ * and reading it. Generated rather than typed, so the pairing is exact. */
+const UYIR_SIGNS = [
+  ["", "a"], ["ா", "ā"], ["ி", "i"], ["ீ", "ī"], ["ு", "u"], ["ூ", "ū"],
+  ["ெ", "e"], ["ே", "ē"], ["ை", "ai"], ["ொ", "o"], ["ோ", "ō"], ["ௌ", "au"],
+];
+const UYIRMEI = [];
+CONSONANTS.slice(0, 18).forEach(([mey, ctr]) => {
+  const base = mey.replace("்", "");            // க் → க, the inherent-a form
+  UYIR_SIGNS.forEach(([sign, vtr]) => {
+    UYIRMEI.push({
+      ta: base + sign, tr: ctr + vtr, topic: "alphabet",
+      en: ctr + vtr + " — " + mey + " + " + (sign ? sign : "the inherent a"),
+    });
+  });
+});
+/* Tamil has its own numerals. Rare on signs today, common in old texts. */
+const NUMERALS = [
+  ["௦", "0", "zero"], ["௧", "1", "one"], ["௨", "2", "two"], ["௩", "3", "three"],
+  ["௪", "4", "four"], ["௫", "5", "five"], ["௬", "6", "six"], ["௭", "7", "seven"],
+  ["௮", "8", "eight"], ["௯", "9", "nine"], ["௰", "10", "ten"],
+  ["௱", "100", "hundred"], ["௲", "1000", "thousand"],
+].map(([ta, tr, en]) => ({ ta, tr, en: en + " — the Tamil numeral", topic: "alphabet" }));
+
 const ALPHABET = {
-  vowels: VOWELS.map(([ta, tr, en]) => ({ ta, tr, en, topic: "alphabet" })),
-  consonants: CONSONANTS.map(([ta, tr, en]) => ({ ta, tr, en, topic: "alphabet" })),
+  groups: [
+    { label: "Uyir — vowels", items: VOWELS.map(([ta, tr, en]) => ({ ta, tr, en, topic: "alphabet" })) },
+    { label: "Mey — consonants", items: CONSONANTS.map(([ta, tr, en]) => ({ ta, tr, en, topic: "alphabet" })) },
+    { label: "Uyirmei — the 216 compound letters", items: UYIRMEI },
+    { label: "Tamil numerals", items: NUMERALS, unit: "numerals" },
+  ],
 };
 
 /* ------------------------------ Vocabulary ----------------------------- */
@@ -1439,6 +1470,111 @@ const VOCAB = [].concat(
     ["மின்னணு", "miṉṉaṇu", "electronic"],
     ["நேர்நிகர்", "nērnikar", "virtual"],
     ["பதிவேற்று", "pativēṟṟu", "upload"],
+  ]),
+  /* ---- culture & customs ---- */
+  V("culture", [
+    ["பொங்கல்", "poṅkal", "Pongal — the January harvest festival, and the sweet rice cooked for it"],
+    ["தீபாவளி", "tīpāvaḷi", "Deepavali — the festival of lights, oil lamps and fireworks"],
+    ["நவராத்திரி", "navarāttiri", "Navaratri — nine nights of the goddess"],
+    ["கொலு", "kolu", "the stepped display of dolls set up for Navaratri"],
+    ["விநாயகர் சதுர்த்தி", "vināyakar caturtti", "Ganesha's festival, with clay idols"],
+    ["தமிழ்ப் புத்தாண்டு", "tamiḻp puttāṇṭu", "Tamil New Year, in mid-April"],
+    ["கார்த்திகை தீபம்", "kārttikai tīpam", "the festival of lamps in Karthikai month"],
+    ["திருவிழா", "tiruviḻā", "a temple festival"],
+    ["கோலம்", "kōlam", "the pattern drawn in rice flour at the threshold each dawn"],
+    ["வாசல்", "vācal", "the threshold — where the kolam goes"],
+    ["கும்பிடு", "kumpiṭu", "to greet or pray with joined palms"],
+    ["கோவில்", "kōvil", "temple"],
+    ["பிரசாதம்", "piracātam", "food blessed at the temple and shared out"],
+    ["விபூதி", "vipūti", "the sacred ash worn on the forehead"],
+    ["குங்குமம்", "kuṅkumam", "the red powder worn on the forehead"],
+    ["பொட்டு", "poṭṭu", "the dot worn on the forehead"],
+    ["மல்லிகைப் பூ", "mallikaip pū", "jasmine, strung and worn in the hair"],
+    ["பட்டுப் புடவை", "paṭṭup puṭavai", "a silk sari, for weddings and festivals"],
+    ["வேட்டி", "vēṭṭi", "the white cloth men wrap at the waist"],
+    ["தாலி", "tāli", "the wedding pendant tied on at the ceremony"],
+    ["பிள்ளையார் சுழி", "piḷḷaiyār cuḻi", "the small mark drawn before writing, for luck"],
+    ["பரதநாட்டியம்", "paratanāṭṭiyam", "Bharatanatyam, the classical dance"],
+    ["கர்நாடக இசை", "karnāṭaka icai", "Carnatic music"],
+    ["வீணை", "vīṇai", "the veena, a plucked string instrument"],
+    ["மிருதங்கம்", "mirutaṅkam", "the mridangam drum"],
+    ["நாதசுவரம்", "nātacuvaram", "the nadaswaram, played at weddings"],
+    ["சிலம்பம்", "cilampam", "silambam, the staff-fighting art"],
+    ["ஜல்லிக்கட்டு", "jallikkaṭṭu", "the bull-embracing sport held at Pongal"],
+    ["கபடி", "kapaṭi", "kabaddi"],
+    ["திருக்குறள்", "tirukkuṟaḷ", "the Tirukkural — 1,330 couplets on virtue, wealth and love"],
+    ["திருவள்ளுவர்", "tiruvaḷḷuvar", "Tiruvalluvar, who wrote the Kural"],
+    ["சங்க இலக்கியம்", "caṅka ilakkiyam", "Sangam literature, the oldest Tamil poetry"],
+    ["செந்தமிழ்", "centamiḻ", "literary Tamil — the written register"],
+    ["கொடுந்தமிழ்", "koṭuntamiḻ", "spoken Tamil — the everyday register"],
+    ["வாழை இலை", "vāḻai ilai", "the banana leaf a feast is served on"],
+    ["சாப்பாடு", "cāppāṭu", "a meal — especially a full rice meal"],
+    ["இட்லி", "iṭli", "idli, steamed rice cakes"],
+    ["தோசை", "tōcai", "dosa"],
+    ["சாம்பார்", "cāmpār", "sambar"],
+    ["ரசம்", "racam", "rasam, the thin peppery soup"],
+    ["தயிர் சாதம்", "tayir cātam", "curd rice, the cool end of a meal"],
+    ["பாயசம்", "pāyacam", "payasam, the sweet pudding"],
+    ["பில்டர் காபி", "pilṭar kāpi", "filter coffee, cooled by pouring between two cups"],
+    ["அண்ணா", "aṇṇā", "elder brother — how you address any man a little older"],
+    ["அக்கா", "akkā", "elder sister — and any woman a little older"],
+    ["ஐயா", "aiyā", "sir"],
+    ["ஊர்", "ūr", "one's home town — where you're really from"],
+    ["தமிழ்நாடு", "tamiḻnāṭu", "Tamil Nadu"],
+    ["மதுரை", "maturai", "Madurai, the temple city"],
+    ["ஈழம்", "īḻam", "Eelam — the Tamil homeland in Sri Lanka"],
+  ]),
+  /* ---- spoken Tamil against written Tamil ----
+     Tamil has two registers and they differ a lot. What you read in a book
+     is centamiḻ; what you hear on the street is this. Each entry is the
+     spoken form, with the written form it stands in for. */
+  V("spoken", [
+    ["இருக்கேன்", "irukkēṉ", "I am (written: இருக்கிறேன்)"],
+    ["இருக்கான்", "irukkāṉ", "he is (written: இருக்கிறான்)"],
+    ["இருக்கா", "irukkā", "she is (written: இருக்கிறாள்)"],
+    ["இருக்காங்க", "irukkāṅka", "they are, or he/she is, respectfully (written: இருக்கிறார்கள்)"],
+    ["போறேன்", "pōṟēṉ", "I'm going (written: போகிறேன்)"],
+    ["வர்றேன்", "varṟēṉ", "I'm coming (written: வருகிறேன்)"],
+    ["சாப்பிடறேன்", "cāppiṭaṟēṉ", "I'm eating (written: சாப்பிடுகிறேன்)"],
+    ["பேசறேன்", "pēcaṟēṉ", "I'm speaking (written: பேசுகிறேன்)"],
+    ["பண்ணு", "paṇṇu", "do (spoken; written: செய்)"],
+    ["பண்றேன்", "paṇṟēṉ", "I'm doing (written: செய்கிறேன்)"],
+    ["பாத்தேன்", "pāttēṉ", "I saw (written: பார்த்தேன்)"],
+    ["எப்படி இருக்கீங்க", "eppaṭi irukkīṅka", "how are you? (written: எப்படி இருக்கிறீர்கள்)"],
+    ["நல்லா இருக்கேன்", "nallā irukkēṉ", "I'm fine (written: நன்றாக இருக்கிறேன்)"],
+    ["சாப்பிட்டீங்களா", "cāppiṭṭīṅkaḷā", "have you eaten? — the everyday greeting (written: சாப்பிட்டீர்களா)"],
+    ["ரொம்ப", "rompa", "very (written: மிகவும்)"],
+    ["இல்ல", "illa", "no, not (written: இல்லை)"],
+    ["ஆமா", "āmā", "yes (written: ஆம்)"],
+    ["வாங்க", "vāṅka", "come, politely (written: வாருங்கள்)"],
+    ["போங்க", "pōṅka", "go, politely (written: போங்கள்)"],
+    ["சொல்லுங்க", "colluṅka", "tell me, politely (written: சொல்லுங்கள்)"],
+    ["பாருங்க", "pāruṅka", "look, politely (written: பாருங்கள்)"],
+    ["நாங்க", "nāṅka", "we (written: நாங்கள்)"],
+    ["நீங்க", "nīṅka", "you, polite (written: நீங்கள்)"],
+    ["அவங்க", "avaṅka", "they, or he/she respectfully (written: அவர்கள்)"],
+    ["உங்க", "uṅka", "your, polite (written: உங்கள்)"],
+    ["எங்க", "eṅka", "where? — also our (written: எங்கே / எங்கள்)"],
+    ["இங்க", "iṅka", "here (written: இங்கே)"],
+    ["அங்க", "aṅka", "there (written: அங்கே)"],
+    ["எதுக்கு", "etukku", "what for? (written: எதற்கு)"],
+    ["யாரு", "yāru", "who? (written: யார்)"],
+    ["வேணும்", "vēṇum", "want, need (written: வேண்டும்)"],
+    ["வேணாம்", "vēṇām", "don't want (written: வேண்டாம்)"],
+    ["தெரியல", "teriyala", "I don't know (written: தெரியவில்லை)"],
+    ["புரியல", "puriyala", "I don't understand (written: புரியவில்லை)"],
+    ["என்னாச்சு", "eṉṉāccu", "what happened? (written: என்ன ஆயிற்று)"],
+    ["பரவால்ல", "paravālla", "it's fine, no problem (written: பரவாயில்லை)"],
+    ["நேத்து", "nēttu", "yesterday (written: நேற்று)"],
+    ["நாளைக்கு", "nāḷaikku", "tomorrow (written: நாளை)"],
+    ["இப்போ", "ippō", "now (written: இப்பொழுது)"],
+    ["அப்போ", "appō", "then (written: அப்பொழுது)"],
+    ["எப்போ", "eppō", "when? (written: எப்பொழுது)"],
+    ["வீட்டுக்கு", "vīṭṭukku", "to the house (written: வீட்டிற்கு)"],
+    ["போலாம்", "pōlām", "let's go (written: போகலாம்)"],
+    ["சூப்பர்", "cūppar", "great! — from English 'super'"],
+    ["ஹோட்டல்", "hōṭṭal", "any restaurant — from 'hotel'"],
+    ["டீ", "ṭī", "tea — from English"],
   ])
 );
 
@@ -2250,19 +2386,20 @@ const ICONS = {
   grammar: "இடைச்சொல்", adjectives: "பெயரடை", adverbs: "வினையுரி", verbs: "வினைச்சொல்",
   food: "உணவு", body: "உடல்", health: "உடல்நலம்", clothing: "ஆடை", home: "வீடு",
   animals: "விலங்கு", nature: "இயற்கை", places: "இடம்", travel: "பயணம்",
-  time: "நேரம்", work: "வேலை", school: "கல்வி", tech: "கணினி", sentences: "வாக்கியம்",
+  time: "நேரம்", work: "வேலை", school: "கல்வி", tech: "கணினி",
+  culture: "பண்பாடு", spoken: "பேச்சு", sentences: "வாக்கியம்",
 };
 
 window.KILI.register("tamil", {
   icons: ICONS,
   ui: { account: "கணக்கு", progress: "முன்னேற்றம்", search: "தேடல்" },
   alphabet: ALPHABET,
-  alphabetTitle: "Alphabet",
-  alphabetLabels: ["Uyir — vowels", "Mey — consonants"],
+  alphabetTitle: "The Tamil script",
   vocab: VOCAB,
   sentences: SENTENCES,
   conjugation: CONJUGATION,
   practiceIcons: {
+    today: "இன்று", weak: "கடினம்",
     review: "மீட்டல்", vocab: "சொல்", sentence: "வாக்கியம்", conjugation: "வினை",
     listening: "கேட்டல்", mixed: "கலவை", reading: "திருக்குறள்",
   },
