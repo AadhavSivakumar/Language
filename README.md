@@ -56,8 +56,28 @@ Two modes were added to every topic:
   transliteration, with only the meaning as a hint. It is the hardest drill for
   a new script and the one that makes it stick.
 
-Session length (10, 15 or 20 questions) is a setting on the progress screen, and
-the back of every flashcard now says how well the memory thinks you know it.
+Two more were added everywhere:
+
+- **Number drill** plays a number and asks for the digits. Recognising a written
+  numeral is a different skill from catching one said aloud, and numbers are
+  famously the last thing to become automatic. The digits are taken from the
+  English gloss and only when it is exactly a number word, so measure-word
+  entries like 一个人 and ordinals like *first* are correctly left out — around
+  thirty drillable numbers per course.
+- **A new word is met before it is tested.** Today's lesson used to throw an
+  unseen word straight into multiple choice, which is guessing rather than
+  learning. Now the word appears first on its own — script, pronunciation,
+  meaning, audio — and its question follows later in the same session.
+
+**Every session ends with what you missed**, listed with meanings and a speaker
+so the mistakes get fixed while they're still fresh, rather than waiting for the
+spaced-repetition memory to bring them back hours or days later. Miss four or
+more and there's a button to drill exactly those.
+
+Session length (10, 15 or 20 questions) and **playback speed** (slow, normal,
+natural) are settings on the progress screen — slow while you're still decoding
+a script, natural once you're not. The back of every flashcard says how well the
+memory thinks you know it.
 
 ## Culture, where a course has it
 

@@ -845,3 +845,35 @@ kbd {
 .flash-mastery.weak { color: var(--bad); border-color: var(--bad); }
 .flash-mastery.learning { color: var(--accent); border-color: var(--accent); }
 .flash-mastery.new { color: var(--muted); }
+
+/* ------------------------ Meeting a new word ------------------------------
+   Not a question: the word set large with nothing to choose from, so the
+   first encounter is reading rather than guessing. */
+.meet-card {
+  border: 1px solid var(--line); border-left: 3px solid var(--accent);
+  background: var(--card); padding: 26px 22px; margin: 8px 0 14px;
+  text-align: center;
+}
+.meet-main { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.meet-word { font-size: 38px; font-weight: 500; line-height: 1.3; }
+.meet-tr { margin-top: 10px; font-size: 15px; color: var(--muted); font-style: italic; }
+.meet-en { margin-top: 6px; font-size: 19px; font-family: var(--display); font-weight: 600; }
+.meet-hint { text-align: center; }
+@media (max-width: 520px) { .meet-word { font-size: 30px; } }
+
+/* --------------------- What you missed, at the end ------------------------ */
+.review-title {
+  margin: 30px 0 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .13em; color: var(--muted);
+  padding-bottom: 8px; border-bottom: 1px solid var(--line);
+}
+.review-list { display: flex; flex-direction: column; text-align: left; }
+.review-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  border-bottom: 1px solid var(--line); padding: 11px 2px;
+}
+.review-row:last-child { border-bottom: none; }
+.review-main { min-width: 0; }
+.review-ta { display: flex; align-items: center; gap: 10px; }
+.review-ta-text { font-size: 19px; font-weight: 500; }
+.review-sub { font-size: 13px; color: var(--muted); font-style: italic; margin-top: 2px; }

@@ -164,6 +164,7 @@
 
     // Tamil keeps its original key so progress saved before the app went
     // multilingual is still found.
+    keyIndex = null;
     SAVE_KEY = lang.id === "tamil" ? "kili-tamil-v2" : "kili-" + lang.id + "-v2";
     state = load();
     // The interface is in English; individual words carry their own lang tag
@@ -266,6 +267,28 @@
     if (due.length < 8) due.push(...shuffle(fresh).slice(0, 8 - due.length));
     return due;
   }
+  /* Exercises carry only an SRS key; the end-of-session review needs the whole
+   * item back. Built once per course, rebuilt when the course changes. */
+  let keyIndex = null;
+  function itemByKey(k) {
+    if (!keyIndex) {
+      keyIndex = {};
+      VOCAB.concat(SENTENCES).forEach(it => {
+        const key = wkey(it);
+        if (!keyIndex[key]) keyIndex[key] = it;
+      });
+      alphabetAll().forEach(it => {
+        const key = wkey(it);
+        if (!keyIndex[key]) keyIndex[key] = it;
+      });
+      CONJUGATION.forEach(t => t.forms.forEach(f => {
+        const key = wkey(f);
+        if (!keyIndex[key]) keyIndex[key] = f;
+      }));
+    }
+    return keyIndex[k] || null;
+  }
+
   /* Words you keep missing: two or more lapses, or a lapse with no recovery
    * yet. Sorted worst-first. Topped up with due words so the track is never
    * too short to make a session. */
@@ -613,7 +636,7 @@
       const u = new SpeechSynthesisUtterance(text);
       u.lang = LANG.speech;
       if (taVoice) u.voice = taVoice;
-      u.rate = 0.85;
+      u.rate = speechRate();
       speechSynthesis.speak(u);
     } catch (e) {}
   }
@@ -972,6 +995,7 @@
     const ts = topicSentences(topic.id);
     if (ts.length >= 2) m.push("build");
     if (ts.some(clozeable)) m.push("cloze");
+    if (numberItems(topicVocab(topic.id)).length >= 3) m.push("numdrill");
     return m;
   }
   function modeMeta(mode) {
@@ -995,6 +1019,7 @@
       cloze:     { title: "Fill the gap", desc: "One word is missing — which is it?" },
       dictate:   { title: "Dictation", desc: "Hear it, write it — no text to lean on" },
       today:     { title: "Start today's lesson", desc: "Reviews, new words and a sentence, mixed" },
+      numdrill:  { title: "Number drill", desc: "Hear a number, type the digits" },
     })[mode];
   }
 
@@ -1305,6 +1330,26 @@
     wrap.appendChild(el("p", "level-note",
       "How many questions a practice session asks. Today's lesson uses the same number."));
 
+    // Playback speed.
+    wrap.appendChild(el("h2", "section-title", "Playback speed"));
+    const rateRow = el("div", "level-row");
+    const currentRate = SPEECH_RATES.filter(r => r.rate === speechRate())[0];
+    SPEECH_RATES.forEach(r => {
+      const b = el("button", "level-chip" + (currentRate && r.id === currentRate.id ? " on" : ""), r.label);
+      b.type = "button";
+      b.addEventListener("click", () => {
+        state.speechRate = r.id; save(); renderProgress();
+        // Say something at the new speed, so the choice is audible.
+        const sample = VOCAB[Math.floor(Math.random() * VOCAB.length)];
+        if (sample) speak(sample.ta);
+      });
+      rateRow.appendChild(b);
+    });
+    wrap.appendChild(rateRow);
+    wrap.appendChild(el("p", "level-note",
+      "How fast " + LN() + " is read aloud. Slow while you're still decoding the " +
+      "script; natural once you're not."));
+
     // Streak calendar — last 14 days.
     wrap.appendChild(el("h2", "section-title", state.streak + "-day streak"));
     const cal = el("div", "cal");
@@ -1501,6 +1546,18 @@
   }
 
   /* =========================== EXERCISE GENERATION ====================== */
+  /* How fast the voice reads. A setting on the progress screen. Slow is for
+   * a script you are still decoding; natural is what you'll actually hear. */
+  const SPEECH_RATES = [
+    { id: "slow", label: "Slow", rate: 0.6 },
+    { id: "normal", label: "Normal", rate: 0.85 },
+    { id: "natural", label: "Natural", rate: 1.05 },
+  ];
+  function speechRate() {
+    const m = SPEECH_RATES.filter(r => r.id === (state && state.speechRate))[0];
+    return m ? m.rate : 0.85;
+  }
+
   /* Questions per session. A setting on the progress screen; 10 by default. */
   const SESSION_LENGTHS = [10, 15, 20];
   const maxQ = () => (state && SESSION_LENGTHS.indexOf(state.sessionLen) >= 0 ? state.sessionLen : 10);
@@ -1741,6 +1798,56 @@
   // A sentence can take a gap if it has at least two tokens to choose between.
   const clozeable = (x) => !!(x.words && x.words.length >= 2);
 
+  /* Numbers need to become automatic, and recognising a written numeral is
+   * not the same skill as catching one said aloud. This drill plays the
+   * number and asks for the digits — no multiple choice to guess from.
+   *
+   * The digits come from the English gloss, and only when the gloss is
+   * exactly a number word: "one person — 个 counts people" is a measure-word
+   * entry, not a number, and is correctly left out. */
+  const EN_NUMBERS = {
+    zero: "0", one: "1", two: "2", three: "3", four: "4", five: "5", six: "6",
+    seven: "7", eight: "8", nine: "9", ten: "10", eleven: "11", twelve: "12",
+    thirteen: "13", fourteen: "14", fifteen: "15", sixteen: "16",
+    seventeen: "17", eighteen: "18", nineteen: "19", twenty: "20",
+    "twenty-one": "21", "twenty-five": "25", thirty: "30", forty: "40",
+    fifty: "50", sixty: "60", seventy: "70", eighty: "80", ninety: "90",
+    hundred: "100", "one hundred": "100", "two hundred": "200",
+    thousand: "1000", "one thousand": "1000",
+    "ten thousand": "10000", "eleven thousand": "11000",
+    "one hundred thousand": "100000", "hundred thousand": "100000",
+    million: "1000000", "one million": "1000000", "ten million": "10000000",
+    "a hundred million": "100000000",
+  };
+  function digitsOf(gloss) {
+    let g = String(gloss || "").toLowerCase();
+    g = g.split("—")[0].split("(")[0].trim();          // drop notes and asides
+    g = g.replace(/^the number\s+/, "").replace(/^an?\s+/, "").trim();
+    g = g.replace(/[.,!?;:]+$/, "");
+    if (/^\d+$/.test(g)) return g;
+    return Object.prototype.hasOwnProperty.call(EN_NUMBERS, g) ? EN_NUMBERS[g] : null;
+  }
+  function numberItems(pool) {
+    const out = [], seen = {};
+    pool.forEach(it => {
+      const d = digitsOf(it.en);
+      if (!d || seen[it.ta]) return;
+      seen[it.ta] = 1;
+      out.push({ it, d });
+    });
+    return out;
+  }
+  function genNumberDrill(pool) {
+    const items = numberItems(pool);
+    if (items.length < 3) return [];
+    return sample(items, Math.min(maxQ(), items.length)).map(({ it, d }) => ({
+      type: "type", dictate: true, digits: true, audio: it.ta, tr: it.tr,
+      prompt: "", promptSub: "", key: wkey(it),
+      ask: "Type the number you hear, in digits",
+      accept: [d], answerLabel: d + "  ·  " + it.ta,
+    }));
+  }
+
   /* Dictation: hear the word, write it. The hardest and most useful drill
    * for a new script — you can't lean on recognising the shape. */
   function genDictation(pool) {
@@ -1786,7 +1893,10 @@
       const ex = forms[i % forms.length](VOCAB, [it])[0];
       if (ex) queue.push(ex);
     });
+    // A never-seen word is met first, then asked about — never asked cold.
+    const intros = [];
     newWords.forEach(it => {
+      intros.push({ type: "meet", unscored: true, ta: it.ta, tr: it.tr, en: it.en });
       const ex = genChoice(VOCAB, [it])[0];
       if (ex) queue.push(ex);
     });
@@ -1794,7 +1904,14 @@
       const cloze = genCloze(SENTENCES)[0]; if (cloze) queue.push(cloze);
       const build = genBuild(SENTENCES)[0]; if (build) queue.push(build);
     }
-    return shuffle(queue);
+    // The questions are shuffled; each introduction is then placed directly in
+    // front of its own question, so a word is always met before it is asked.
+    const mixed = shuffle(queue);
+    intros.forEach(intro => {
+      const at = mixed.findIndex(x => x.key && x.key.split(SRS_SEP)[0] === intro.ta);
+      mixed.splice(at < 0 ? 0 : at, 0, intro);
+    });
+    return mixed;
   }
   /* Strip diacritics so a plain-ASCII spelling is accepted when typing —
    * "nanri" for "naṉṟi", "manana" for "mañana", "schon" for "schön". The
@@ -1838,10 +1955,15 @@
     else if (mode === "cloze")     queue = genCloze(spool);
     else if (mode === "dictate")   queue = genDictation(vpool);
     else if (mode === "today")     queue = genToday();
+    else if (mode === "numdrill")  queue = genNumberDrill(vpool);
 
     if (!queue.length) { alert("Not enough content for this mode yet."); return; }
 
-    const session = { topic, mode, level, queue, idx: 0, total: queue.length, correct: 0 };
+    // `total` is the length of the queue, and drives the progress bar — it grows
+    // when a missed question is re-inserted. `scored` counts real answers, and
+    // is what accuracy is measured against.
+    const session = { topic, mode, level, queue, idx: 0, total: queue.length,
+                      correct: 0, scored: 0, missed: [] };
     renderExercise(session);
   }
 
@@ -1855,12 +1977,21 @@
       case "type":   return renderType(session, ex);
       case "listen": return renderListen(session, ex);
       case "speak":  return renderSpeak(session, ex);
+      case "meet":   return renderMeet(session, ex);
       default:       return advance(session, true);
     }
   }
 
   function advance(session, wasCorrect, exercise) {
     recordKeys(exercise, wasCorrect); save();
+    // A "meet this word" card is exposure, not a question: it neither scores
+    // nor counts against your accuracy.
+    if (exercise && exercise.unscored) { session.idx++; return renderExercise(session); }
+    session.scored = (session.scored || 0) + 1;
+    if (!wasCorrect && exercise && exercise.key) {
+      session.missed = session.missed || [];
+      if (session.missed.indexOf(exercise.key) < 0) session.missed.push(exercise.key);
+    }
     if (wasCorrect) session.correct++;
     else if (exercise) {
       const insertAt = Math.min(session.queue.length, session.idx + 3);
@@ -2179,14 +2310,16 @@
 
       const input = el("input", "type-input");
       input.type = "text"; input.autocapitalize = "off"; input.autocomplete = "off";
-      input.spellcheck = false; input.placeholder = "Type here…";
+      input.spellcheck = false;
+      input.placeholder = ex.digits ? "123" : "Type here…";
+      if (ex.digits) input.inputMode = "numeric";
       body.appendChild(input);
 
       function check() {
         const val = normalize(input.value); if (!val) return;
         const ok = ex.accept.some(a => normalize(a) === val || normalize(fold(a)) === normalize(fold(input.value)));
         input.disabled = true; input.classList.add(ok ? "ok" : "bad");
-        showResult(body, foot, ok, ex.accept[0], () => advance(session, ok, ex));
+        showResult(body, foot, ok, ex.answerLabel || ex.accept[0], () => advance(session, ok, ex));
       }
       const { foot, btn } = footerCheck(body, { disabled: true, onClick: check });
       body.appendChild(keyHint("↵=check|esc=quit"));
@@ -2390,6 +2523,40 @@
     });
   }
 
+  /* -------------------------------- MEET ---------------------------------
+   * A word you have never seen before is shown, not tested. Quizzing a brand
+   * new word is guessing; this is the moment of actually learning it that has
+   * to come first. The question on the same word follows later in the queue,
+   * so the exposure is immediately put to use. */
+  function renderMeet(session, ex) {
+    lessonChrome(session, (body) => {
+      body.appendChild(el("h2", "ex-title", "A new word"));
+      const card = el("div", "meet-card");
+      const top = el("div", "meet-main");
+      top.appendChild(targetSpan("meet-word", ex.ta));
+      top.appendChild(speaker(ex.ta));
+      card.appendChild(top);
+      if (ex.tr) card.appendChild(el("div", "meet-tr", ex.tr));
+      card.appendChild(el("div", "meet-en", ex.en));
+      body.appendChild(card);
+      body.appendChild(el("p", "hint meet-hint",
+        "Take it in — you'll be asked about it in a moment."));
+      speak(ex.ta);
+      const { btn } = footerCheck(body, {
+        label: "Got it",
+        onClick: () => advance(session, true, ex),
+      });
+      body.appendChild(keyHint("enter=continue|esc=quit"));
+      setKeys(session, (e) => {
+        if (e.key === "Enter") {
+          if (e.target && e.target.classList && e.target.classList.contains("btn")) return;
+          e.preventDefault(); btn.click();
+        }
+      });
+      setTimeout(() => btn.focus(), 50);
+    });
+  }
+
   /* ----------------------------- READER ----------------------------------
    * Not a scored exercise — a quiet reading view for a course's literary
    * collection (the Tirukkuṟaḷ in Tamil, proverbs elsewhere). Each text is
@@ -2565,12 +2732,13 @@
     app.innerHTML = ""; onKey = null;
     const wrap = el("div", "lesson done-screen");
     paintTopic(wrap, session.topic);
-    const acc = session.total ? Math.round((session.correct / session.total) * 100) : 100;
+    const asked = session.scored || session.total;
+    const acc = asked ? Math.round((session.correct / asked) * 100) : 100;
     wrap.appendChild(el("div", "big-emoji", acc + "%"));
     wrap.appendChild(el("h2", "done-title", acc >= 80 ? "Well done." : "Keep practising."));
 
     const stats = el("div", "done-stats");
-    [["+" + gain, "XP earned"], [session.correct + " / " + session.total, "Correct"],
+    [["+" + gain, "XP earned"], [session.correct + " / " + asked, "Correct"],
      [state.streak, "Day streak"]]
       .forEach(([num, label]) => {
         const s = el("div", "done-stat");
@@ -2580,8 +2748,43 @@
       });
     wrap.appendChild(stats);
 
+    /* The words you missed, with their meanings and a speaker. Seeing them
+     * together at the end is where a session's mistakes actually get fixed —
+     * the SRS will bring them back, but not for hours or days. */
+    const missedItems = (session.missed || []).map(itemByKey).filter(Boolean);
+    if (missedItems.length) {
+      wrap.appendChild(el("h3", "review-title",
+        missedItems.length === 1 ? "Worth another look" :
+        "Worth another look · " + missedItems.length + " words"));
+      const list = el("div", "review-list");
+      missedItems.forEach(it => {
+        const row = el("div", "review-row");
+        const main = el("div", "review-main");
+        const line = el("div", "review-ta");
+        line.appendChild(targetSpan("review-ta-text", it.ta));
+        line.appendChild(speaker(it.ta));
+        main.appendChild(line);
+        main.appendChild(el("div", "review-sub",
+          (it.tr ? it.tr + " · " : "") + it.en));
+        row.appendChild(main);
+        list.appendChild(row);
+      });
+      wrap.appendChild(list);
+    }
+
     const foot = el("div", "check-foot");
-    const again = el("button", "btn btn-primary", "Practise again");
+    if (missedItems.length >= 4) {
+      const drill = el("button", "btn btn-primary", "Drill these " + missedItems.length);
+      drill.addEventListener("click", () => {
+        const hue = KILI.paletteFor(LANG)[2];
+        renderTopic({ id: "prac-custom", title: "Words you missed",
+          icon: uiIcon("search", "Review"), color: hue.light, colorDark: hue.dark,
+          kind: "practice", pool: "custom", items: missedItems });
+      });
+      foot.appendChild(drill);
+    }
+    const again = el("button", "btn " + (missedItems.length >= 4 ? "btn-ghost" : "btn-primary"),
+      "Practise again");
     again.addEventListener("click", () => startMode(session.topic, session.mode, session.level));
     const more = el("button", "btn btn-ghost", "Choose another mode");
     more.addEventListener("click", () => renderTopic(session.topic));
